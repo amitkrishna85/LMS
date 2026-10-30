@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Milestone,
   PlusCircle,
@@ -18,6 +19,7 @@ import {
 import { toast } from "sonner";
 
 export default function AdminPathsPage() {
+  const router = useRouter();
   const [paths, setPaths] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -78,6 +80,7 @@ export default function AdminPathsPage() {
           isFeatured: true,
         });
         loadPaths();
+        router.push(`/admin/paths/${createdPath.id}`);
       } else {
         toast.error(data.error || "Failed to create path");
       }

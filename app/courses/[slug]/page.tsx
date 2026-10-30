@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
-import { MOCK_COURSES } from "@/lib/mock-data";
+import { getMockCourses } from "@/lib/mock-data";
 import { PublicNavbar } from "@/components/public/navbar";
 import { PublicFooter } from "@/components/public/footer";
 import { CourseDetailClient } from "./course-detail-client";
@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: CoursePageProps) {
   const { slug } = params;
   const course = await safeDbQuery(
     () => prisma.course.findUnique({ where: { slug } }),
-    MOCK_COURSES.find((c) => c.slug === slug)
+    getMockCourses().find((c: any) => c.slug === slug)
   );
 
   if (!course) {
@@ -70,7 +70,7 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
           },
         },
       }),
-    MOCK_COURSES.find((c) => c.slug === slug)
+    getMockCourses().find((c: any) => c.slug === slug)
   );
 
   if (!course || course.status !== "PUBLISHED") {
@@ -130,7 +130,7 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
         },
         take: 3,
       }),
-    MOCK_COURSES.filter((c) => c.id !== course.id).slice(0, 3)
+    getMockCourses().filter((c: any) => c.id !== course.id).slice(0, 3)
   );
 
   // 4. Build JSON-LD structured data

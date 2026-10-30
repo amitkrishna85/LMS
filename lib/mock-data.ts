@@ -524,6 +524,19 @@ export function addMockLearningPathItem(pathId: string, item: any) {
   return item;
 }
 
+export function updateMockLearningPathItem(pathId: string, itemId: string, updates: any) {
+  const path = inMemoryLearningPaths.find((p: any) => p.id === pathId);
+  if (path && path.items) {
+    const item = path.items.find((it: any) => it.id === itemId);
+    if (item) {
+      Object.assign(item, updates);
+      path.items.sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+      return item;
+    }
+  }
+  return null;
+}
+
 export function deleteMockLearningPathItem(pathId: string, itemId: string) {
   const path = inMemoryLearningPaths.find((p: any) => p.id === pathId);
   if (path && path.items) {

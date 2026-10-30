@@ -203,8 +203,8 @@ export default function AdminPathDetailPage() {
 
   const filteredCourses = availableCourses.filter(
     (c) =>
-      c.title.toLowerCase().includes(courseSearch.toLowerCase()) ||
-      c.instructorName.toLowerCase().includes(courseSearch.toLowerCase())
+      (c.title || "").toLowerCase().includes(courseSearch.toLowerCase()) ||
+      (c.instructorName || "").toLowerCase().includes(courseSearch.toLowerCase())
   );
 
   return (

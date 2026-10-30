@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getAdminSession, unauthorizedResponse } from "@/lib/admin-auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
-import { addMockLearningPathItem, deleteMockLearningPathItem } from "@/lib/mock-data";
+import {
+  addMockLearningPathItem,
+  updateMockLearningPathItem,
+  deleteMockLearningPathItem,
+} from "@/lib/mock-data";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -110,6 +114,8 @@ export async function PATCH(
         }),
       { id: itemId, order, isRequired, note }
     );
+
+    updateMockLearningPathItem(params.id, itemId, { order, isRequired, note });
 
     return NextResponse.json({ success: true, item: updated });
   } catch (error) {

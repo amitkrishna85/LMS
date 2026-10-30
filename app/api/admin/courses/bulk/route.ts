@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession, unauthorizedResponse } from "@/lib/admin-auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
+import { updateMockCourse, deleteMockCourse } from "@/lib/mock-data";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +33,7 @@ export async function POST(req: Request) {
         () => prisma.course.deleteMany({ where: { id: { in: courseIds } } }),
         null
       );
+      courseIds.forEach((id) => deleteMockCourse(id));
     } else {
       const statusMap: Record<string, "PUBLISHED" | "ARCHIVED" | "DRAFT"> = {
         PUBLISH: "PUBLISHED",
@@ -45,6 +47,9 @@ export async function POST(req: Request) {
             data: { status: statusMap[action] },
           }),
         null
+      );
+      courseIds.forEach((id) =>
+        updateMockCourse(id, { status: statusMap[action] })
       );
     }
 

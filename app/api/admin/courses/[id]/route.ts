@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession, unauthorizedResponse } from "@/lib/admin-auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
-import { getMockCourses } from "@/lib/mock-data";
+import { getMockCourses, updateMockCourse, deleteMockCourse } from "@/lib/mock-data";
 
 export const dynamic = "force-dynamic";
 
@@ -84,6 +84,7 @@ export async function PATCH(
         updatedAt: new Date(),
       }
     );
+    const savedUpdated = updateMockCourse(id, body) || updated;
 
     // Audit Log
     await safeDbQuery(
@@ -100,7 +101,7 @@ export async function PATCH(
       null
     );
 
-    return NextResponse.json({ success: true, course: updated });
+    return NextResponse.json({ success: true, course: savedUpdated });
   } catch (error) {
     console.error("Update course error:", error);
     return NextResponse.json({ error: "Failed to update course" }, { status: 500 });
@@ -121,6 +122,8 @@ export async function DELETE(
       () => prisma.course.delete({ where: { id } }),
       null
     );
+
+    deleteMockCourse(id);
 
     // Audit Log
     await safeDbQuery(

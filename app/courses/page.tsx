@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma, safeDbQuery } from "@/lib/prisma";
-import { MOCK_COURSES, MOCK_CATEGORIES } from "@/lib/mock-data";
+import { getMockCourses, MOCK_CATEGORIES } from "@/lib/mock-data";
 import { PublicNavbar } from "@/components/public/navbar";
 import { PublicFooter } from "@/components/public/footer";
 import { CourseCard } from "@/components/public/course-card";
@@ -52,7 +52,7 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
         include: { category: true },
         orderBy: { createdAt: "desc" },
       }),
-    MOCK_COURSES.filter((c) => c.status === "PUBLISHED")
+    getMockCourses().filter((c: any) => c.status === "PUBLISHED")
   );
 
   // 3. Filter in memory (works uniformly across live database and mock fallback)

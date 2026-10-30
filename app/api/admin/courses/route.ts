@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession, unauthorizedResponse } from "@/lib/admin-auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
-import { getMockCourses } from "@/lib/mock-data";
+import { getMockCourses, addMockCourse, getMockCategories } from "@/lib/mock-data";
 import { slugify } from "@/lib/utils";
 import { z } from "zod";
 
@@ -105,14 +105,53 @@ export async function GET(req: Request) {
         const cnt = await prisma.course.count({ where: whereClause });
         return [c, cnt];
       },
-      [
-        getMockCourses().map((c) => ({
-          ...c,
-          category: { id: c.categoryId, name: "Engineering", slug: "swe" },
-          _count: { sections: c.sections?.length || 0, enrollments: 8 },
-        })),
-        getMockCourses().length,
-      ]
+      (() => {
+        let list = getMockCourses().map((c: any) => {
+          const cat = getMockCategories().find((cat: any) => cat.id === c.categoryId);
+          return {
+            ...c,
+            category: cat
+              ? { id: cat.id, name: cat.name, slug: cat.slug }
+              : { id: c.categoryId || "cat_swe", name: "Engineering", slug: "swe" },
+            _count: c._count || { sections: c.sections?.length || 0, enrollments: 8 },
+          };
+        });
+
+        if (search) {
+          const s = search.toLowerCase();
+          list = list.filter(
+            (c: any) =>
+              c.title?.toLowerCase().includes(s) ||
+              c.shortDescription?.toLowerCase().includes(s) ||
+              c.instructorName?.toLowerCase().includes(s)
+          );
+        }
+
+        if (type && (type === "INTERNAL" || type === "EXTERNAL")) {
+          list = list.filter((c: any) => c.type === type);
+        }
+
+        if (status && (status === "DRAFT" || status === "PUBLISHED" || status === "ARCHIVED")) {
+          list = list.filter((c: any) => c.status === status);
+        }
+
+        if (categoryId) {
+          list = list.filter((c: any) => c.categoryId === categoryId);
+        }
+
+        if (sort === "title") {
+          list.sort((a: any, b: any) => (a.title || "").localeCompare(b.title || ""));
+        } else {
+          list.sort(
+            (a: any, b: any) =>
+              new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+          );
+        }
+
+        const totalCnt = list.length;
+        const paginated = list.slice(skip, skip + limit);
+        return [paginated, totalCnt];
+      })()
     );
 
     return NextResponse.json({
@@ -184,13 +223,22 @@ export async function POST(req: Request) {
           },
         }),
       {
-        id: "mock_course_" + Date.now(),
+        id: "course_" + Date.now(),
         ...data,
         slug: finalSlug,
         createdAt: new Date(),
         updatedAt: new Date(),
       }
     );
+
+    const savedCourse = course || {
+      id: "course_" + Date.now(),
+      ...data,
+      slug: finalSlug,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    addMockCourse(savedCourse);
 
     // Audit Log
     await safeDbQuery(
@@ -200,18 +248,18 @@ export async function POST(req: Request) {
             actorId: session.user.id,
             action: "COURSE_CREATE",
             entity: "Course",
-            entityId: course.id,
+            entityId: savedCourse.id,
             meta: JSON.stringify({
-              title: course.title,
-              type: course.type,
-              status: course.status,
+              title: savedCourse.title,
+              type: savedCourse.type,
+              status: savedCourse.status,
             }),
           },
         }),
       null
     );
 
-    return NextResponse.json({ success: true, course });
+    return NextResponse.json({ success: true, course: savedCourse });
   } catch (error) {
     console.error("Create course error:", error);
     return NextResponse.json(

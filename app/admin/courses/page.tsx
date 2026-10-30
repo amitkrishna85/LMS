@@ -60,7 +60,7 @@ export default function AdminCoursesPage() {
     type: "INTERNAL" as "INTERNAL" | "EXTERNAL",
     externalUrl: "",
     externalProvider: "Udemy",
-    status: "DRAFT" as "DRAFT" | "PUBLISHED" | "ARCHIVED",
+    status: "PUBLISHED" as "DRAFT" | "PUBLISHED" | "ARCHIVED",
     isFeatured: false,
   });
 
@@ -175,8 +175,37 @@ export default function AdminCoursesPage() {
       if (!res.ok) {
         toast.error(data.error || "Failed to create course");
       } else {
-        toast.success(`Course "${data.course.title}" created!`);
+        const created = data.course;
+        const formatted = {
+          ...created,
+          category: categories.find((c) => c.id === created.categoryId) || {
+            id: created.categoryId,
+            name: "Engineering",
+            slug: "swe",
+          },
+          _count: { sections: 0, enrollments: 0 },
+        };
+        setCourses((prev) => [formatted, ...prev.filter((c) => c.id !== formatted.id)]);
+        setPagination((prev) => ({ ...prev, total: prev.total + 1 }));
+        toast.success(`Course "${created.title}" created!`);
         setShowCreateModal(false);
+        setCourseForm({
+          title: "",
+          shortDescription: "",
+          description: "",
+          thumbnailUrl: "",
+          instructorName: "",
+          level: "BEGINNER",
+          language: "English",
+          durationMinutes: 60,
+          tagsString: "WebDev, React",
+          categoryId: categories[0]?.id || "",
+          type: "INTERNAL",
+          externalUrl: "",
+          externalProvider: "Udemy",
+          status: "PUBLISHED",
+          isFeatured: false,
+        });
         fetchCourses();
       }
     } catch {
@@ -802,8 +831,8 @@ export default function AdminCoursesPage() {
                     }
                     className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   >
-                    <option value="DRAFT">Save as Draft</option>
-                    <option value="PUBLISHED">Published (Visible on site)</option>
+                    <option value="PUBLISHED">Published (Visible on site & learning paths)</option>
+                    <option value="DRAFT">Save as Draft (Admin Only)</option>
                     <option value="ARCHIVED">Archived</option>
                   </select>
                 </div>

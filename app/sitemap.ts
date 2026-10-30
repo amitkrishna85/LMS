@@ -1,6 +1,6 @@
 import { MetadataRoute } from "next";
 import { prisma, safeDbQuery } from "@/lib/prisma";
-import { MOCK_COURSES, getMockLearningPaths } from "@/lib/mock-data";
+import { getMockCourses, getMockLearningPaths } from "@/lib/mock-data";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +14,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         where: { status: "PUBLISHED" },
         select: { slug: true, updatedAt: true },
       }),
-    MOCK_COURSES.filter((c: any) => c.status === "PUBLISHED").map((c: any) => ({
+    getMockCourses().filter((c: any) => c.status === "PUBLISHED").map((c: any) => ({
       slug: c.slug,
       updatedAt: new Date(),
     }))

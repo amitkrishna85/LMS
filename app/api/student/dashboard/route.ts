@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
-import { MOCK_COURSES, getMockLearningPaths } from "@/lib/mock-data";
+import { getMockCourses, getMockLearningPaths } from "@/lib/mock-data";
 
 export const dynamic = "force-dynamic";
 
@@ -93,7 +93,7 @@ export async function GET(req: Request) {
       });
     } else {
       // Fallback mock enrollment for demo presentation
-      const internalMocks = MOCK_COURSES.filter((c) => c.type === "INTERNAL");
+      const internalMocks = getMockCourses().filter((c: any) => c.type === "INTERNAL");
       enrolledCourses = internalMocks.slice(0, 2).map((c, idx) => ({
         id: `mock_enr_${c.id}`,
         courseId: c.id,
@@ -151,7 +151,7 @@ export async function GET(req: Request) {
           ep.status === "COMPLETED" ? 100 : ep.status === "IN_PROGRESS" ? 50 : 0,
       }));
     } else {
-      const extMocks = MOCK_COURSES.filter((c) => c.type === "EXTERNAL");
+      const extMocks = getMockCourses().filter((c: any) => c.type === "EXTERNAL");
       externalCourses = extMocks.slice(0, 2).map((c, idx) => ({
         id: `mock_ext_prg_${c.id}`,
         courseId: c.id,

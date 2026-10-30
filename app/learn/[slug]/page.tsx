@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
-import { MOCK_COURSES } from "@/lib/mock-data";
+import { getMockCourses } from "@/lib/mock-data";
 import { CoursePlayerClient } from "./course-player-client";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +36,7 @@ export default async function CourseLearnPage({ params }: LearnPageProps) {
           },
         },
       }),
-    MOCK_COURSES.find((c) => c.slug === slug)
+    getMockCourses().find((c: any) => c.slug === slug)
   );
 
   if (!course || course.type !== "INTERNAL") {

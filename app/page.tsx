@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
 import {
-  MOCK_COURSES,
+  getMockCourses,
   getMockLearningPaths,
   MOCK_CATEGORIES,
   MOCK_HOMEPAGE_SECTIONS,
@@ -61,7 +61,10 @@ export default async function HomePage() {
         take: 6,
         orderBy: { sortOrder: "asc" },
       }),
-    MOCK_COURSES.filter((c) => c.status === "PUBLISHED" && c.isFeatured).slice(0, 6)
+    (() => {
+      const pub = getMockCourses().filter((c: any) => c.status === "PUBLISHED" && c.isFeatured);
+      return (pub.length > 0 ? pub : getMockCourses().filter((c: any) => c.status === "PUBLISHED")).slice(0, 6);
+    })()
   );
 
   // 4. Fetch Featured Learning Paths
@@ -106,7 +109,7 @@ export default async function HomePage() {
       }));
     } else {
       // Show sample in-progress course from mocks
-      continueLearningCourses = MOCK_COURSES.slice(0, 2).map((c, i) => ({
+      continueLearningCourses = getMockCourses().slice(0, 2).map((c: any, i: number) => ({
         ...c,
         progressPercent: i === 0 ? 60 : 30,
       }));
