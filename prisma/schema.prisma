@@ -1,0 +1,312 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  STUDENT
+}
+
+enum CourseLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum CourseType {
+  INTERNAL
+  EXTERNAL
+}
+
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum LessonType {
+  VIDEO
+  TEXT
+  PDF
+  QUIZ
+}
+
+enum EnrollmentStatus {
+  ENROLLED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum ExternalProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum PathStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum HomepageSectionType {
+  HERO
+  FEATURED_COURSES
+  FEATURED_PATHS
+  CATEGORIES
+  CUSTOM_LIST
+}
+
+model User {
+  id                 String     @id @default(cuid())
+  name               String
+  email              String     @unique
+  passwordHash       String
+  role               Role       @default(STUDENT)
+  isActive           Boolean    @default(true)
+  mustChangePassword Boolean    @default(false)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  enrollments            Enrollment[]
+  lessonProgresses       LessonProgress[]
+  pathEnrollments        PathEnrollment[]
+  externalCourseProgress ExternalCourseProgress[]
+  auditLogs              AuditLog[]               @relation("ActorAuditLogs")
+  passwordResetTokens    PasswordResetToken[]
+
+  @@index([email])
+  @@index([role])
+  @@index([isActive])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  parentId  String?
+  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children  Category[] @relation("CategoryHierarchy")
+  courses   Course[]
+  createdAt DateTime   @default(now())
+
+  @@index([slug])
+  @@index([parentId])
+}
+
+model Course {
+  id               String       @id @default(cuid())
+  title            String
+  slug             String       @unique
+  shortDescription String
+  description      String       @db.Text
+  thumbnailUrl     String?
+  instructorName   String
+  level            CourseLevel  @default(BEGINNER)
+  language         String       @default("English")
+  durationMinutes  Int          @default(0)
+  tags             String[]
+  categoryId       String
+  category         Category     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  type             CourseType   @default(INTERNAL)
+  externalUrl      String?
+  externalProvider String?      // e.g. "Udemy", "Coursera", "YouTube", "Other"
+  status           CourseStatus @default(DRAFT)
+  isFeatured       Boolean      @default(false)
+  sortOrder        Int          @default(0)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  sections               Section[]
+  enrollments            Enrollment[]
+  learningPathItems      LearningPathItem[]
+  externalCourseProgress ExternalCourseProgress[]
+
+  @@index([slug])
+  @@index([status])
+  @@index([categoryId])
+  @@index([type])
+  @@index([isFeatured])
+}
+
+model Section {
+  id       String   @id @default(cuid())
+  courseId String
+  course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title    String
+  order    Int      @default(0)
+  lessons  Lesson[]
+
+  @@index([courseId])
+  @@index([order])
+}
+
+model Lesson {
+  id              String     @id @default(cuid())
+  sectionId       String
+  section         Section    @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  title           String
+  type            LessonType @default(VIDEO)
+  contentUrl      String?    @db.Text // Video URL or PDF URL
+  body            String?    @db.Text // Rich text / reading content or quiz JSON
+  durationMinutes Int        @default(10)
+  order           Int        @default(0)
+  isPreview       Boolean    @default(false)
+
+  progresses LessonProgress[]
+
+  @@index([sectionId])
+  @@index([order])
+}
+
+model Enrollment {
+  id           String           @id @default(cuid())
+  userId       String
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId     String
+  course       Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  enrolledAt   DateTime         @default(now())
+  status       EnrollmentStatus @default(ENROLLED)
+  completedAt  DateTime?
+  lastOpenedAt DateTime?
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+  @@index([status])
+}
+
+model LessonProgress {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId    String
+  lesson      Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+
+  @@unique([userId, lessonId])
+  @@index([userId])
+  @@index([lessonId])
+}
+
+model LearningPath {
+  id             String     @id @default(cuid())
+  title          String
+  slug           String     @unique
+  description    String     @db.Text
+  thumbnailUrl   String?
+  level          CourseLevel @default(BEGINNER)
+  status         PathStatus @default(DRAFT)
+  isFeatured     Boolean    @default(false)
+  estimatedHours Int        @default(0)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  items       LearningPathItem[]
+  enrollments PathEnrollment[]
+
+  @@index([slug])
+  @@index([status])
+  @@index([isFeatured])
+}
+
+model LearningPathItem {
+  id         String       @id @default(cuid())
+  pathId     String
+  path       LearningPath @relation(fields: [pathId], references: [id], onDelete: Cascade)
+  courseId   String
+  course     Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  order      Int          @default(0)
+  isRequired Boolean      @default(true)
+  note       String?
+
+  @@unique([pathId, courseId])
+  @@index([pathId])
+  @@index([courseId])
+  @@index([order])
+}
+
+model PathEnrollment {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pathId      String
+  path        LearningPath @relation(fields: [pathId], references: [id], onDelete: Cascade)
+  startedAt   DateTime     @default(now())
+  completedAt DateTime?
+
+  @@unique([userId, pathId])
+  @@index([userId])
+  @@index([pathId])
+}
+
+model ExternalCourseProgress {
+  id        String                 @id @default(cuid())
+  userId    String
+  user      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId  String
+  course    Course                 @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  status    ExternalProgressStatus @default(NOT_STARTED)
+  markedAt  DateTime               @default(now())
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+}
+
+model HomepageSection {
+  id        String              @id @default(cuid())
+  type      HomepageSectionType
+  title     String
+  config    String              @db.Text // JSON string containing section configurations
+  order     Int                 @default(0)
+  isVisible Boolean             @default(true)
+
+  @@index([order])
+  @@index([isVisible])
+}
+
+model SiteSettings {
+  id           String   @id @default("default")
+  siteName     String   @default("SkillPulse")
+  logoUrl      String?
+  primaryColor String   @default("#6366f1")
+  footerText   String   @default("© 2026 SkillPulse. All rights reserved.")
+  socialLinks  String   @default("{}") // JSON string
+  updatedAt    DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation("ActorAuditLogs", fields: [actorId], references: [id], onDelete: SetNull)
+  action    String   // e.g. "USER_CREATE", "COURSE_PUBLISH", "PASSWORD_RESET"
+  entity    String   // e.g. "User", "Course", "LearningPath"
+  entityId  String?
+  meta      String?  @db.Text // JSON metadata
+  createdAt DateTime @default(now())
+
+  @@index([actorId])
+  @@index([action])
+  @@index([entity])
+  @@index([createdAt])
+}
