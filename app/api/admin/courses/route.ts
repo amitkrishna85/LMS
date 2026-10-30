@@ -9,21 +9,21 @@ export const dynamic = "force-dynamic";
 
 const courseSchema = z
   .object({
-    title: z.string().min(3, "Title must be at least 3 characters"),
+    title: z.string().min(2, "Title must be at least 2 characters"),
     slug: z.string().optional(),
-    shortDescription: z.string().min(10, "Short description must be at least 10 characters"),
-    description: z.string().min(20, "Detailed description must be at least 20 characters"),
+    shortDescription: z.string().min(2, "Short description must be at least 2 characters").default("Comprehensive course curriculum"),
+    description: z.string().min(2, "Detailed description must be at least 2 characters").default("Comprehensive course curriculum covering essential techniques, architecture, and practical implementations."),
     thumbnailUrl: z.string().nullable().optional(),
-    instructorName: z.string().min(2, "Instructor name is required"),
+    instructorName: z.string().min(1, "Instructor name is required").default("Expert Instructor"),
     level: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]).default("BEGINNER"),
     language: z.string().default("English"),
     durationMinutes: z.number().int().nonnegative().default(60),
     tags: z.array(z.string()).default([]),
-    categoryId: z.string().min(1, "Category is required"),
+    categoryId: z.string().optional().default("cat_swe"),
     type: z.enum(["INTERNAL", "EXTERNAL"]).default("INTERNAL"),
     externalUrl: z.string().nullable().optional(),
     externalProvider: z.string().nullable().optional(),
-    status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).default("DRAFT"),
+    status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).default("PUBLISHED"),
     isFeatured: z.boolean().default(false),
   })
   .refine(

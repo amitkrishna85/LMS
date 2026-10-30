@@ -17,6 +17,7 @@ import {
   ArrowDown,
   CheckCircle2,
   Search,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDuration } from "@/lib/utils";
@@ -37,12 +38,40 @@ export default function AdminPathDetailPage() {
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [stepNote, setStepNote] = useState("");
   const [stepRequired, setStepRequired] = useState(true);
+  const [fetchingCourses, setFetchingCourses] = useState(false);
+
+  const fetchCoursesList = async () => {
+    setFetchingCourses(true);
+    try {
+      const res = await fetch("/api/admin/courses?limit=100&sort=newest");
+      const data = await res.json();
+      if (data.courses) {
+        setAvailableCourses(data.courses);
+        if (data.courses.length > 0) {
+          setSelectedCourseId((curr) => {
+            const exists = data.courses.some((c: any) => c.id === curr);
+            return exists ? curr : data.courses[0].id;
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch courses:", err);
+    } finally {
+      setFetchingCourses(false);
+    }
+  };
+
+  const handleOpenAddCourseModal = () => {
+    setShowAddCourseModal(true);
+    setCourseSearch("");
+    fetchCoursesList();
+  };
 
   const loadData = () => {
     setLoading(true);
     Promise.all([
       fetch(`/api/admin/paths/${pathId}`).then((r) => r.json()),
-      fetch("/api/admin/courses?limit=100").then((r) => r.json()),
+      fetch("/api/admin/courses?limit=100&sort=newest").then((r) => r.json()),
     ])
       .then(([pathData, coursesData]) => {
         if (pathData.path) {
@@ -65,6 +94,23 @@ export default function AdminPathDetailPage() {
   useEffect(() => {
     if (pathId) loadData();
   }, [pathId]);
+
+  useEffect(() => {
+    if (availableCourses.length > 0) {
+      const matches = availableCourses.filter(
+        (c) =>
+          (c.title || "").toLowerCase().includes(courseSearch.toLowerCase()) ||
+          (c.instructorName || "").toLowerCase().includes(courseSearch.toLowerCase()) ||
+          (c.externalProvider || "").toLowerCase().includes(courseSearch.toLowerCase())
+      );
+      if (matches.length > 0) {
+        const exists = matches.some((c) => c.id === selectedCourseId);
+        if (!exists) {
+          setSelectedCourseId(matches[0].id);
+        }
+      }
+    }
+  }, [courseSearch, availableCourses]);
 
   // Save Path Details
   const handleSavePath = async (e: React.FormEvent) => {
@@ -204,7 +250,8 @@ export default function AdminPathDetailPage() {
   const filteredCourses = availableCourses.filter(
     (c) =>
       (c.title || "").toLowerCase().includes(courseSearch.toLowerCase()) ||
-      (c.instructorName || "").toLowerCase().includes(courseSearch.toLowerCase())
+      (c.instructorName || "").toLowerCase().includes(courseSearch.toLowerCase()) ||
+      (c.externalProvider || "").toLowerCase().includes(courseSearch.toLowerCase())
   );
 
   return (
@@ -377,7 +424,7 @@ export default function AdminPathDetailPage() {
               </div>
 
               <button
-                onClick={() => setShowAddCourseModal(true)}
+                onClick={handleOpenAddCourseModal}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/20 transition cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
@@ -393,7 +440,7 @@ export default function AdminPathDetailPage() {
                     No courses added to this path yet.
                   </p>
                   <button
-                    onClick={() => setShowAddCourseModal(true)}
+                    onClick={handleOpenAddCourseModal}
                     className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 rounded-lg transition"
                   >
                     Add First Step
@@ -492,42 +539,88 @@ export default function AdminPathDetailPage() {
       {showAddCourseModal && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
-            <h3 className="text-base font-bold text-white mb-1">
-              Add Course to Roadmap
-            </h3>
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Layers className="w-4 h-4 text-indigo-400" />
+                <span>Add Course to Roadmap</span>
+              </h3>
+              <Link
+                href="/admin/courses"
+                target="_blank"
+                className="text-[11px] font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition"
+              >
+                <span>+ Create New Course</span>
+                <ExternalLink className="w-3 h-3" />
+              </Link>
+            </div>
             <p className="text-xs text-slate-400 mb-4">
               Select an internal or external course from your catalog and specify milestone guidance.
             </p>
 
             <form onSubmit={handleAddCourseStep} className="space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">
-                  Select Course *
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-semibold text-slate-300">
+                    Select Course * ({filteredCourses.length} available)
+                  </label>
+                  {fetchingCourses && (
+                    <span className="text-[11px] text-indigo-400 animate-pulse flex items-center gap-1">
+                      <RefreshCw className="w-3 h-3 animate-spin" />
+                      Syncing catalog...
+                    </span>
+                  )}
+                </div>
                 <div className="space-y-2">
-                  <div className="relative">
-                    <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
-                    <input
-                      type="text"
-                      value={courseSearch}
-                      onChange={(e) => setCourseSearch(e.target.value)}
-                      placeholder="Filter course list..."
-                      className="w-full pl-9 pr-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 text-xs focus:outline-none"
-                    />
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+                      <input
+                        type="text"
+                        value={courseSearch}
+                        onChange={(e) => setCourseSearch(e.target.value)}
+                        placeholder="Filter course list by title, instructor..."
+                        className="w-full pl-9 pr-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={fetchCoursesList}
+                      disabled={fetchingCourses}
+                      title="Refresh catalog list"
+                      className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${fetchingCourses ? "animate-spin text-indigo-400" : ""}`} />
+                    </button>
                   </div>
 
-                  <select
-                    value={selectedCourseId}
-                    onChange={(e) => setSelectedCourseId(e.target.value)}
-                    size={5}
-                    className="w-full p-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  >
-                    {filteredCourses.map((c) => (
-                      <option key={c.id} value={c.id} className="p-2 border-b border-slate-700/50">
-                        {c.title} ({c.type === "INTERNAL" ? "Hosted" : `External: ${c.externalProvider}`})
-                      </option>
-                    ))}
-                  </select>
+                  {filteredCourses.length === 0 ? (
+                    <div className="p-4 bg-slate-800/60 border border-slate-700 rounded-xl text-center space-y-2">
+                      <p className="text-xs text-slate-400">
+                        {courseSearch ? `No courses matching "${courseSearch}"` : "No courses found in catalog."}
+                      </p>
+                      <Link
+                        href="/admin/courses"
+                        target="_blank"
+                        className="inline-flex items-center gap-1 text-xs text-indigo-400 hover:underline font-semibold"
+                      >
+                        <span>Open Course Manager to add courses</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </Link>
+                    </div>
+                  ) : (
+                    <select
+                      value={selectedCourseId}
+                      onChange={(e) => setSelectedCourseId(e.target.value)}
+                      size={8}
+                      className="w-full p-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    >
+                      {filteredCourses.map((c) => (
+                        <option key={c.id} value={c.id} className="p-2 border-b border-slate-700/50">
+                          {c.title} ({c.type === "INTERNAL" ? "Hosted" : `External: ${c.externalProvider || "External"}`})
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               </div>
 

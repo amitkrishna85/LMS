@@ -1,4 +1,6 @@
 import bcrypt from "bcryptjs";
+import fs from "fs";
+import path from "path";
 
 // Pre-hashed passwords for deterministic mock fallback
 // Password is "Admin123!" for admin, "Student123!" for students
@@ -372,33 +374,117 @@ const INITIAL_MOCK_COURSES = [
     },
   ];
 
-let inMemoryCourses: any[] = [...INITIAL_MOCK_COURSES];
+const DB_FILE = path.join(process.cwd(), "data", "mock-db.json");
+
+const globalForMock = globalThis as unknown as {
+  __MOCK_COURSES__?: any[];
+  __MOCK_PATHS__?: any[];
+};
+
+function ensureMockDbInitialized() {
+  if (globalForMock.__MOCK_COURSES__ && globalForMock.__MOCK_PATHS__) {
+    return;
+  }
+
+  // 1. Try reading existing JSON from disk
+  try {
+    if (fs.existsSync(DB_FILE)) {
+      const content = fs.readFileSync(DB_FILE, "utf-8");
+      const data = JSON.parse(content);
+      if (Array.isArray(data.courses) && data.courses.length > 0) {
+        globalForMock.__MOCK_COURSES__ = data.courses;
+      }
+      if (Array.isArray(data.paths) && data.paths.length > 0) {
+        globalForMock.__MOCK_PATHS__ = data.paths;
+      }
+    }
+  } catch (err) {
+    console.warn("Failed to read mock-db.json:", err);
+  }
+
+  // 2. Initialize with default mock constants if not loaded
+  if (!globalForMock.__MOCK_COURSES__) {
+    globalForMock.__MOCK_COURSES__ = INITIAL_MOCK_COURSES.map((c: any, i: number) => ({
+      ...c,
+      createdAt: c.createdAt || new Date(Date.now() - (100 - i) * 86400000).toISOString(),
+      updatedAt: c.updatedAt || new Date(Date.now() - (100 - i) * 86400000).toISOString(),
+    }));
+  }
+
+  if (!globalForMock.__MOCK_PATHS__) {
+    globalForMock.__MOCK_PATHS__ = INITIAL_MOCK_PATHS.map((p: any, i: number) => ({
+      ...p,
+      createdAt: p.createdAt || new Date(Date.now() - (50 - i) * 86400000).toISOString(),
+      updatedAt: p.updatedAt || new Date(Date.now() - (50 - i) * 86400000).toISOString(),
+    }));
+  }
+
+  persistMockDb();
+}
+
+function persistMockDb() {
+  try {
+    const dir = path.dirname(DB_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(
+      DB_FILE,
+      JSON.stringify(
+        {
+          courses: globalForMock.__MOCK_COURSES__ || [],
+          paths: globalForMock.__MOCK_PATHS__ || [],
+        },
+        null,
+        2
+      ),
+      "utf-8"
+    );
+  } catch (err) {
+    console.warn("Failed to write mock-db.json:", err);
+  }
+}
 
 export function getMockCourses() {
-  return inMemoryCourses;
+  ensureMockDbInitialized();
+  return globalForMock.__MOCK_COURSES__!;
 }
 
 export function addMockCourse(course: any) {
+  ensureMockDbInitialized();
   const complete = {
     sections: [],
     _count: { sections: 0, enrollments: 0 },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
     ...course,
   };
-  inMemoryCourses = [complete, ...inMemoryCourses.filter((c: any) => c.id !== course.id)];
+  globalForMock.__MOCK_COURSES__ = [
+    complete,
+    ...(globalForMock.__MOCK_COURSES__ || []).filter((c: any) => c.id !== course.id),
+  ];
+  persistMockDb();
   return complete;
 }
 
 export function updateMockCourse(id: string, updates: any) {
-  const idx = inMemoryCourses.findIndex((c: any) => c.id === id);
+  ensureMockDbInitialized();
+  const list = globalForMock.__MOCK_COURSES__ || [];
+  const idx = list.findIndex((c: any) => c.id === id);
   if (idx !== -1) {
-    inMemoryCourses[idx] = { ...inMemoryCourses[idx], ...updates };
-    return inMemoryCourses[idx];
+    list[idx] = { ...list[idx], ...updates, updatedAt: new Date().toISOString() };
+    persistMockDb();
+    return list[idx];
   }
   return null;
 }
 
 export function deleteMockCourse(id: string) {
-  inMemoryCourses = inMemoryCourses.filter((c: any) => c.id !== id);
+  ensureMockDbInitialized();
+  globalForMock.__MOCK_COURSES__ = (globalForMock.__MOCK_COURSES__ || []).filter(
+    (c: any) => c.id !== id
+  );
+  persistMockDb();
 }
 
 const INITIAL_MOCK_PATHS = [
@@ -465,40 +551,55 @@ const INITIAL_MOCK_PATHS = [
     },
   ];
 
-let inMemoryLearningPaths: any[] = [...INITIAL_MOCK_PATHS];
-
 export function getMockLearningPaths() {
-  return inMemoryLearningPaths;
+  ensureMockDbInitialized();
+  return globalForMock.__MOCK_PATHS__!;
 }
 
 export function addMockLearningPath(path: any) {
+  ensureMockDbInitialized();
   const complete = {
     items: [],
     _count: { enrollments: 0, items: 0 },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
     ...path,
   };
-  inMemoryLearningPaths = [complete, ...inMemoryLearningPaths.filter((p: any) => p.id !== path.id)];
+  globalForMock.__MOCK_PATHS__ = [
+    complete,
+    ...(globalForMock.__MOCK_PATHS__ || []).filter((p: any) => p.id !== path.id),
+  ];
+  persistMockDb();
   return complete;
 }
 
 export function updateMockLearningPath(id: string, updates: any) {
-  const idx = inMemoryLearningPaths.findIndex((p: any) => p.id === id);
+  ensureMockDbInitialized();
+  const list = globalForMock.__MOCK_PATHS__ || [];
+  const idx = list.findIndex((p: any) => p.id === id);
   if (idx !== -1) {
-    inMemoryLearningPaths[idx] = { ...inMemoryLearningPaths[idx], ...updates };
-    return inMemoryLearningPaths[idx];
+    list[idx] = { ...list[idx], ...updates, updatedAt: new Date().toISOString() };
+    persistMockDb();
+    return list[idx];
   }
   return null;
 }
 
 export function deleteMockLearningPath(id: string) {
-  inMemoryLearningPaths = inMemoryLearningPaths.filter((p: any) => p.id !== id);
+  ensureMockDbInitialized();
+  globalForMock.__MOCK_PATHS__ = (globalForMock.__MOCK_PATHS__ || []).filter(
+    (p: any) => p.id !== id
+  );
+  persistMockDb();
 }
 
 export function addMockLearningPathItem(pathId: string, item: any) {
-  const path = inMemoryLearningPaths.find((p: any) => p.id === pathId);
+  ensureMockDbInitialized();
+  const path = (globalForMock.__MOCK_PATHS__ || []).find((p: any) => p.id === pathId);
   if (path) {
     if (!path.items) path.items = [];
-    const course = inMemoryCourses.find((c: any) => c.id === item.courseId);
+    const courses = getMockCourses();
+    const course = courses.find((c: any) => c.id === item.courseId);
     const fullItem = {
       ...item,
       course: course
@@ -519,18 +620,21 @@ export function addMockLearningPathItem(pathId: string, item: any) {
     ].sort((a: any, b: any) => a.order - b.order);
     if (!path._count) path._count = { enrollments: 0, items: 0 };
     path._count.items = path.items.length;
+    persistMockDb();
     return fullItem;
   }
   return item;
 }
 
 export function updateMockLearningPathItem(pathId: string, itemId: string, updates: any) {
-  const path = inMemoryLearningPaths.find((p: any) => p.id === pathId);
+  ensureMockDbInitialized();
+  const path = (globalForMock.__MOCK_PATHS__ || []).find((p: any) => p.id === pathId);
   if (path && path.items) {
     const item = path.items.find((it: any) => it.id === itemId);
     if (item) {
       Object.assign(item, updates);
       path.items.sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+      persistMockDb();
       return item;
     }
   }
@@ -538,10 +642,12 @@ export function updateMockLearningPathItem(pathId: string, itemId: string, updat
 }
 
 export function deleteMockLearningPathItem(pathId: string, itemId: string) {
-  const path = inMemoryLearningPaths.find((p: any) => p.id === pathId);
+  ensureMockDbInitialized();
+  const path = (globalForMock.__MOCK_PATHS__ || []).find((p: any) => p.id === pathId);
   if (path && path.items) {
     path.items = path.items.filter((it: any) => it.id !== itemId);
     if (path._count) path._count.items = path.items.length;
+    persistMockDb();
   }
 }
 
