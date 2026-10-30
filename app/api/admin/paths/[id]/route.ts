@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getAdminSession, unauthorizedResponse } from "@/lib/admin-auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
-import { getMockLearningPaths } from "@/lib/mock-data";
+import {
+  getMockLearningPaths,
+  updateMockLearningPath,
+  deleteMockLearningPath,
+} from "@/lib/mock-data";
 
 export const dynamic = "force-dynamic";
 
@@ -74,6 +78,8 @@ export async function PATCH(
       { id, ...body, updatedAt: new Date() }
     );
 
+    updateMockLearningPath(id, body);
+
     // Audit Log
     await safeDbQuery(
       () =>
@@ -110,6 +116,8 @@ export async function DELETE(
       () => prisma.learningPath.delete({ where: { id } }),
       null
     );
+
+    deleteMockLearningPath(id);
 
     // Audit Log
     await safeDbQuery(

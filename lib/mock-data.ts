@@ -80,8 +80,7 @@ export function getMockCategories() {
   ];
 }
 
-export function getMockCourses() {
-  return [
+const INITIAL_MOCK_COURSES = [
     // 3 INTERNAL COURSES
     {
       id: "crs_int_1",
@@ -372,10 +371,37 @@ export function getMockCourses() {
       sections: [],
     },
   ];
+
+let inMemoryCourses: any[] = [...INITIAL_MOCK_COURSES];
+
+export function getMockCourses() {
+  return inMemoryCourses;
 }
 
-export function getMockLearningPaths() {
-  return [
+export function addMockCourse(course: any) {
+  const complete = {
+    sections: [],
+    _count: { sections: 0, enrollments: 0 },
+    ...course,
+  };
+  inMemoryCourses = [complete, ...inMemoryCourses.filter((c: any) => c.id !== course.id)];
+  return complete;
+}
+
+export function updateMockCourse(id: string, updates: any) {
+  const idx = inMemoryCourses.findIndex((c: any) => c.id === id);
+  if (idx !== -1) {
+    inMemoryCourses[idx] = { ...inMemoryCourses[idx], ...updates };
+    return inMemoryCourses[idx];
+  }
+  return null;
+}
+
+export function deleteMockCourse(id: string) {
+  inMemoryCourses = inMemoryCourses.filter((c: any) => c.id !== id);
+}
+
+const INITIAL_MOCK_PATHS = [
     {
       id: "path_1",
       title: "Full-Stack Cloud Developer Career Path",
@@ -438,6 +464,72 @@ export function getMockLearningPaths() {
       ],
     },
   ];
+
+let inMemoryLearningPaths: any[] = [...INITIAL_MOCK_PATHS];
+
+export function getMockLearningPaths() {
+  return inMemoryLearningPaths;
+}
+
+export function addMockLearningPath(path: any) {
+  const complete = {
+    items: [],
+    _count: { enrollments: 0, items: 0 },
+    ...path,
+  };
+  inMemoryLearningPaths = [complete, ...inMemoryLearningPaths.filter((p: any) => p.id !== path.id)];
+  return complete;
+}
+
+export function updateMockLearningPath(id: string, updates: any) {
+  const idx = inMemoryLearningPaths.findIndex((p: any) => p.id === id);
+  if (idx !== -1) {
+    inMemoryLearningPaths[idx] = { ...inMemoryLearningPaths[idx], ...updates };
+    return inMemoryLearningPaths[idx];
+  }
+  return null;
+}
+
+export function deleteMockLearningPath(id: string) {
+  inMemoryLearningPaths = inMemoryLearningPaths.filter((p: any) => p.id !== id);
+}
+
+export function addMockLearningPathItem(pathId: string, item: any) {
+  const path = inMemoryLearningPaths.find((p: any) => p.id === pathId);
+  if (path) {
+    if (!path.items) path.items = [];
+    const course = inMemoryCourses.find((c: any) => c.id === item.courseId);
+    const fullItem = {
+      ...item,
+      course: course
+        ? {
+            id: course.id,
+            title: course.title,
+            slug: course.slug,
+            type: course.type,
+            externalProvider: course.externalProvider,
+            level: course.level,
+            durationMinutes: course.durationMinutes,
+          }
+        : null,
+    };
+    path.items = [
+      ...path.items.filter((it: any) => it.courseId !== item.courseId),
+      fullItem,
+    ].sort((a: any, b: any) => a.order - b.order);
+    if (!path._count) path._count = { enrollments: 0, items: 0 };
+    path._count.items = path.items.length;
+    return fullItem;
+  }
+  return item;
+}
+
+export function deleteMockLearningPathItem(pathId: string, itemId: string) {
+  const path = inMemoryLearningPaths.find((p: any) => p.id === pathId);
+  if (path && path.items) {
+    path.items = path.items.filter((it: any) => it.id !== itemId);
+    if (path._count) path._count.items = path.items.length;
+  }
 }
 
 export function getMockSiteSettings() {

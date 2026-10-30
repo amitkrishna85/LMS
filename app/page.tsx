@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
 import {
   MOCK_COURSES,
-  MOCK_PATHS,
+  getMockLearningPaths,
   MOCK_CATEGORIES,
   MOCK_HOMEPAGE_SECTIONS,
 } from "@/lib/mock-data";
@@ -65,19 +65,24 @@ export default async function HomePage() {
   );
 
   // 4. Fetch Featured Learning Paths
+  const allMockPaths = getMockLearningPaths();
+  const mockPublished = allMockPaths.filter((p: any) => p.status === "PUBLISHED");
+  const fallbackPaths = mockPublished.length > 0 ? mockPublished : allMockPaths;
+
   const featuredPaths = await safeDbQuery(
     () =>
       prisma.learningPath.findMany({
-        where: { status: "PUBLISHED", isFeatured: true },
+        where: { status: "PUBLISHED" },
         include: {
           items: {
             include: { course: true },
             orderBy: { order: "asc" },
           },
         },
-        take: 3,
+        orderBy: { createdAt: "desc" },
+        take: 6,
       }),
-    MOCK_PATHS.filter((p) => p.status === "PUBLISHED" && p.isFeatured)
+    fallbackPaths
   );
 
   // 5. If user is logged in, fetch "Continue Learning" strip data

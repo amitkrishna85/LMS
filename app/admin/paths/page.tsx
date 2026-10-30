@@ -28,7 +28,7 @@ export default function AdminPathsPage() {
     thumbnailUrl: "",
     level: "INTERMEDIATE" as "BEGINNER" | "INTERMEDIATE" | "ADVANCED",
     estimatedHours: 40,
-    status: "DRAFT" as "DRAFT" | "PUBLISHED",
+    status: "PUBLISHED" as "DRAFT" | "PUBLISHED",
     isFeatured: true,
   });
 
@@ -66,13 +66,15 @@ export default function AdminPathsPage() {
       if (res.ok) {
         toast.success(`Learning path "${data.path.title}" created!`);
         setShowCreateModal(false);
+        const createdPath = data.path;
+        setPaths((prev) => [createdPath, ...prev.filter((p) => p.id !== createdPath.id)]);
         setPathForm({
           title: "",
           description: "",
           thumbnailUrl: "",
           level: "INTERMEDIATE",
           estimatedHours: 40,
-          status: "DRAFT",
+          status: "PUBLISHED",
           isFeatured: true,
         });
         loadPaths();
@@ -355,8 +357,8 @@ export default function AdminPathsPage() {
                   }
                   className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 >
-                  <option value="DRAFT">Draft</option>
-                  <option value="PUBLISHED">Published</option>
+                  <option value="PUBLISHED">Published (Visible on Home & Roadmaps)</option>
+                  <option value="DRAFT">Draft (Admin Only)</option>
                 </select>
               </div>
 

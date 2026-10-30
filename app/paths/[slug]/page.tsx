@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
-import { MOCK_PATHS } from "@/lib/mock-data";
+import { getMockLearningPaths } from "@/lib/mock-data";
 import { PublicNavbar } from "@/components/public/navbar";
 import { PublicFooter } from "@/components/public/footer";
 import { PathRoadmapClient } from "./path-roadmap-client";
@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: PathPageProps) {
   const { slug } = params;
   const path = await safeDbQuery(
     () => prisma.learningPath.findUnique({ where: { slug } }),
-    MOCK_PATHS.find((p) => p.slug === slug)
+    getMockLearningPaths().find((p) => p.slug === slug)
   );
 
   if (!path) return { title: "Path Not Found" };
@@ -56,7 +56,7 @@ export default async function PathDetailPage({ params }: PathPageProps) {
           },
         },
       }),
-    MOCK_PATHS.find((p) => p.slug === slug)
+    getMockLearningPaths().find((p) => p.slug === slug)
   );
 
   if (!path || path.status !== "PUBLISHED") {

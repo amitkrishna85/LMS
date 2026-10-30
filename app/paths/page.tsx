@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma, safeDbQuery } from "@/lib/prisma";
-import { MOCK_PATHS } from "@/lib/mock-data";
+import { getMockLearningPaths } from "@/lib/mock-data";
 import { PublicNavbar } from "@/components/public/navbar";
 import { PublicFooter } from "@/components/public/footer";
 import { PathCard } from "@/components/public/path-card";
@@ -9,6 +9,10 @@ import { Route, Sparkles, BookOpen, Layers } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export default async function PathsPage() {
+  const allPaths = getMockLearningPaths();
+  const publishedPaths = allPaths.filter((p: any) => p.status === "PUBLISHED");
+  const fallback = publishedPaths.length > 0 ? publishedPaths : allPaths;
+
   const paths = await safeDbQuery(
     () =>
       prisma.learningPath.findMany({
@@ -21,7 +25,7 @@ export default async function PathsPage() {
         },
         orderBy: { createdAt: "desc" },
       }),
-    MOCK_PATHS.filter((p) => p.status === "PUBLISHED")
+    fallback
   );
 
   return (

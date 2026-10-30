@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession, unauthorizedResponse } from "@/lib/admin-auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
+import { addMockLearningPathItem, deleteMockLearningPathItem } from "@/lib/mock-data";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -77,6 +78,8 @@ export async function POST(
       }
     );
 
+    addMockLearningPathItem(pathId, item);
+
     return NextResponse.json({ success: true, item });
   } catch (error) {
     console.error("Add path item error:", error);
@@ -134,6 +137,8 @@ export async function DELETE(
       () => prisma.learningPathItem.delete({ where: { id: itemId } }),
       null
     );
+
+    deleteMockLearningPathItem(params.id, itemId);
 
     return NextResponse.json({ success: true, message: "Course removed from path" });
   } catch (error) {

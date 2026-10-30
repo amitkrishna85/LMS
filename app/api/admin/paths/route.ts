@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession, unauthorizedResponse } from "@/lib/admin-auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
-import { getMockLearningPaths } from "@/lib/mock-data";
+import { getMockLearningPaths, addMockLearningPath } from "@/lib/mock-data";
 import { slugify } from "@/lib/utils";
 import { z } from "zod";
 
@@ -52,11 +52,11 @@ export async function GET() {
             },
           },
         }),
-      getMockLearningPaths().map((p) => ({
+      getMockLearningPaths().map((p: any) => ({
         ...p,
-        items: p.items.map((it) => ({
+        items: (p.items || []).map((it: any) => ({
           ...it,
-          course: {
+          course: it.course || {
             id: it.courseId,
             title: "Course " + it.courseId,
             slug: "course-" + it.courseId,
@@ -66,7 +66,7 @@ export async function GET() {
             externalProvider: null,
           },
         })),
-        _count: { enrollments: 6, items: p.items.length },
+        _count: p._count || { enrollments: 0, items: (p.items || []).length },
       })) as any
     );
 
@@ -120,13 +120,26 @@ export async function POST(req: Request) {
           },
         }),
       {
-        id: "mock_path_" + Date.now(),
+        id: "path_" + Date.now(),
         ...data,
         slug: finalSlug,
+        items: [],
+        _count: { enrollments: 0, items: 0 },
         createdAt: new Date(),
         updatedAt: new Date(),
       }
     );
+
+    const savedPath = path || {
+      id: "path_" + Date.now(),
+      ...data,
+      slug: finalSlug,
+      items: [],
+      _count: { enrollments: 0, items: 0 },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    addMockLearningPath(savedPath);
 
     // Audit Log
     await safeDbQuery(
@@ -136,14 +149,14 @@ export async function POST(req: Request) {
             actorId: session.user.id,
             action: "LEARNING_PATH_CREATE",
             entity: "LearningPath",
-            entityId: path.id,
-            meta: JSON.stringify({ title: path.title, status: path.status }),
+            entityId: savedPath.id,
+            meta: JSON.stringify({ title: savedPath.title, status: savedPath.status }),
           },
         }),
       null
     );
 
-    return NextResponse.json({ success: true, path });
+    return NextResponse.json({ success: true, path: savedPath });
   } catch (error) {
     console.error("Create path error:", error);
     return NextResponse.json({ error: "Failed to create path" }, { status: 500 });

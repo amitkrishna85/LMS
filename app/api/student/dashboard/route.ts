@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
-import { MOCK_COURSES, MOCK_PATHS } from "@/lib/mock-data";
+import { MOCK_COURSES, getMockLearningPaths } from "@/lib/mock-data";
 
 export const dynamic = "force-dynamic";
 
@@ -235,7 +235,7 @@ export async function GET(req: Request) {
         };
       });
     } else {
-      enrolledPaths = MOCK_PATHS.slice(0, 1).map((p) => ({
+      enrolledPaths = getMockLearningPaths().slice(0, 1).map((p) => ({
         id: `mock_path_enr_${p.id}`,
         pathId: p.id,
         title: p.title,
