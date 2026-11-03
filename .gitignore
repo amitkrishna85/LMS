@@ -42,3 +42,5 @@ prisma/*.db
 # Local mock database state
 /data/mock-db.json
 /data/mock-db.json.*.tmp
+
+.vercel

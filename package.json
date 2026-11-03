@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/check-brand.mjs && prisma generate && next build",
+    "build": "node scripts/check-brand.mjs && prisma generate && node scripts/deploy-schema.mjs && next build",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",

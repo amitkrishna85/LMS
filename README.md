@@ -66,6 +66,7 @@ cp .env.example .env
 |---|---|
 | `DATABASE_URL` | Neon pooled PostgreSQL connection string (`?sslmode=require&pgbouncer=true`) |
 | `DIRECT_URL` | Neon direct connection string (used for running migrations) |
+| `PRISMA_DATABASE_URL` | Optional direct connection string used when `DIRECT_URL` is not set |
 | `NEXTAUTH_URL` | Base URL of the deployment (e.g., `http://localhost:3000` or `https://your-domain.vercel.app`) |
 | `NEXTAUTH_SECRET` | 32+ character random secret for JWT signing |
 | `SEED_ADMIN_EMAIL` | Default administrator email for initial seeding |
@@ -97,7 +98,12 @@ npm install
 npx prisma generate
 ```
 
-### 3. Seed Database & Create Initial Admin
+### 3. Apply Database Schema
+```bash
+npx prisma migrate deploy
+```
+
+### 4. Seed Database & Create Initial Admin
 To seed the database with the initial administrator, sample students, 3 internal courses, 5 external courses, and 2 learning paths:
 
 ```bash
@@ -110,7 +116,7 @@ Default credentials created by the seed script:
 - **Student 2 (Active):** `elena@skillpulse.local` / `Student123!`
 - **Student 3 (New - tests force password change):** `jordan@skillpulse.local` / `Welcome123!`
 
-### 4. Run the Development Server
+### 5. Run the Development Server
 ```bash
 npm run dev
 ```
@@ -182,23 +188,17 @@ npm run build
 
 1. **Create a Neon Project:**
    - In the Neon console, create a new project and copy both the **Pooled connection string** (for `DATABASE_URL`) and the **Direct connection string** (for `DIRECT_URL`).
-2. **Push Database Schema:**
-   ```bash
-   npx prisma db push
-   npm run seed
-   ```
-3. **Configure Vercel Environment Variables:**
+2. **Configure Vercel Environment Variables:**
    - Add `DATABASE_URL` (pooled Neon connection)
-   - Add `DIRECT_URL` (direct Neon connection)
+   - Add `DIRECT_URL` (direct Neon connection for migrations), or use `PRISMA_DATABASE_URL`
    - Add `NEXTAUTH_SECRET` (generate using `openssl rand -base64 32`)
    - Add `NEXTAUTH_URL` (your production URL, e.g. `https://skillpulse.vercel.app`)
    - Add `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD`
    - Add `STORAGE_PROVIDER="mock"` (or configure Vercel Blob with `BLOB_READ_WRITE_TOKEN`)
-4. **Deploy:**
+3. **Deploy:**
    - Push your code to GitHub and import the repository into Vercel.
-   - The build command is pre-configured in `package.json`:
-     `"build": "prisma generate && next build"`
-   - Thanks to the `safeDbQuery` utility and `dynamic = "force-dynamic"`, Next.js builds on Vercel will never fail even if database pooling is cold during pre-rendering.
+   - Production builds apply committed Prisma migrations before building the app. The migration connection uses `DIRECT_URL`, then `PRISMA_DATABASE_URL`, then `DATABASE_URL`.
+   - Run `npm run seed` manually against the production database only when you want to create the configured initial administrator and sample content.
 
 ---
 
