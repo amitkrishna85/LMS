@@ -44,7 +44,7 @@ export async function GET(req: Request) {
             entityId: "crs_int_1",
             actor: {
               id: "usr_admin_1",
-              name: "Alex Vance (Admin)",
+              name: "Amit Krishna",
               email: "admin@skillpulse.local",
               role: "ADMIN",
             },
@@ -59,7 +59,7 @@ export async function GET(req: Request) {
             entityId: "usr_student_3",
             actor: {
               id: "usr_admin_1",
-              name: "Alex Vance (Admin)",
+              name: "Amit Krishna",
               email: "admin@skillpulse.local",
               role: "ADMIN",
             },

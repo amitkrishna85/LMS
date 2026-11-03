@@ -3,8 +3,8 @@ import { PublicFooter } from "@/components/public/footer";
 import { Mail, MessageSquare, MapPin, Clock } from "lucide-react";
 
 export const metadata = {
-  title: "Support & Contact | SkillPulse",
-  description: "Contact SkillPulse Academy administrators and platform support.",
+  title: "Support & Contact | Falkor Academy",
+  description: "Contact Falkor Academy administrators and platform support.",
 };
 
 export default function ContactPage() {
@@ -36,7 +36,7 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <strong className="block text-slate-900">Email Support</strong>
-                  <span>support@skillpulse.internal</span>
+                  <span>support@falkor.academy</span>
                 </div>
               </div>
 
@@ -56,7 +56,7 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <strong className="block text-slate-900">HQ Office</strong>
-                  <span>SkillPulse Digital Academy • Oslo / Global</span>
+                  <span>Falkor Academy • Oslo / Global</span>
                 </div>
               </div>
             </div>

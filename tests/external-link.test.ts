@@ -17,8 +17,8 @@ describe("External Course Link & Compliance Validation", () => {
   };
 
   it("should validate that external course URLs strictly require https protocol", () => {
-    expect(validateExternalCourseUrl("https://www.udemy.com/course/sample")).toBe(true);
-    expect(validateExternalCourseUrl("https://coursera.org/learn/system-design")).toBe(true);
+    expect(validateExternalCourseUrl("https://example.com/course/sample")).toBe(true);
+    expect(validateExternalCourseUrl("https://example.org/learn/system-design")).toBe(true);
     expect(validateExternalCourseUrl("http://insecure-site.com/course")).toBe(false);
     expect(validateExternalCourseUrl("javascript:alert(1)")).toBe(false);
     expect(validateExternalCourseUrl("")).toBe(false);

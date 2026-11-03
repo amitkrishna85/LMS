@@ -439,7 +439,7 @@ export function StudentDashboardClient({ user }: StudentDashboardClientProps) {
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
                     <ExternalLink className="w-4 h-4 text-blue-600" />
-                    External Accredited Courses (Udemy, Coursera, etc.)
+                    External Partner Programs
                   </h2>
                   <Link
                     href="/courses?type=EXTERNAL"

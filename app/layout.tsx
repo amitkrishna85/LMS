@@ -3,24 +3,23 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/components/providers/session-provider";
 import { Toaster } from "sonner";
+import { BRAND_NAME, DEFAULT_TAGLINE } from "@/lib/brand";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: {
-    default: "SkillPulse | Modern Learning Platform",
-    template: "%s | SkillPulse",
+    default: `${BRAND_NAME} | Learning Platform`,
+    template: `%s | ${BRAND_NAME}`,
   },
-  description:
-    "Curated internal masterclasses and world-class external certifications in one unified platform.",
+  description: DEFAULT_TAGLINE,
   icons: {
     icon: "/favicon.ico",
   },
   openGraph: {
-    title: "SkillPulse | Modern Learning Platform",
-    description:
-      "Curated internal masterclasses and world-class external certifications.",
-    siteName: "SkillPulse",
+    title: `${BRAND_NAME} | Learning Platform`,
+    description: DEFAULT_TAGLINE,
+    siteName: BRAND_NAME,
     type: "website",
   },
 };

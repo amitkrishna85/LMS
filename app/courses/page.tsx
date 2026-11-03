@@ -6,11 +6,8 @@ import { PublicFooter } from "@/components/public/footer";
 import { CourseCard } from "@/components/public/course-card";
 import {
   Search,
-  Filter,
   SlidersHorizontal,
   BookOpen,
-  CheckCircle,
-  ExternalLink,
   ChevronLeft,
   ChevronRight,
   Layers,
@@ -32,7 +29,6 @@ interface CoursesPageProps {
 export default async function CoursesPage({ searchParams }: CoursesPageProps) {
   const query = searchParams.q?.toLowerCase().trim() || "";
   const selectedCategory = searchParams.category || "";
-  const selectedType = searchParams.type || "";
   const selectedLevel = searchParams.level || "";
   const selectedSort = searchParams.sort || "newest";
   const currentPage = parseInt(searchParams.page || "1", 10) || 1;
@@ -48,11 +44,13 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
   const allCourses = await safeDbQuery(
     () =>
       prisma.course.findMany({
-        where: { status: "PUBLISHED" },
+        where: { status: "PUBLISHED", type: "INTERNAL" },
         include: { category: true },
         orderBy: { createdAt: "desc" },
       }),
-    getMockCourses().filter((c: any) => c.status === "PUBLISHED")
+    getMockCourses().filter(
+      (c: any) => c.status === "PUBLISHED" && c.type === "INTERNAL"
+    )
   );
 
   // 3. Filter in memory (works uniformly across live database and mock fallback)
@@ -72,11 +70,6 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
 
     // Category filter
     if (selectedCategory && course.categoryId !== selectedCategory) {
-      return false;
-    }
-
-    // Type filter (INTERNAL or EXTERNAL)
-    if (selectedType && course.type !== selectedType) {
       return false;
     }
 
@@ -117,8 +110,6 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
     if (query && overrides.q === undefined) params.set("q", query);
     if (selectedCategory && overrides.category === undefined)
       params.set("category", selectedCategory);
-    if (selectedType && overrides.type === undefined)
-      params.set("type", selectedType);
     if (selectedLevel && overrides.level === undefined)
       params.set("level", selectedLevel);
     if (selectedSort && overrides.sort === undefined)
@@ -148,11 +139,10 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
               Curated Course Directory
             </span>
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-              Explore Masterclasses & External Certifications
-            </h1>
-            <p className="mt-3 text-sm text-slate-300">
-              Browse our full catalog of hands-on internal workshops and
-              authorized external credentials from Udemy, Coursera, and more.
+                Explore Courses
+              </h1>
+              <p className="mt-3 text-sm text-slate-300">
+                Browse courses with video and written lessons created and curated by Falkor Academy administrators.
             </p>
           </div>
         </div>
@@ -170,9 +160,6 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
             {/* Retain other query params */}
             {selectedCategory && (
               <input type="hidden" name="category" value={selectedCategory} />
-            )}
-            {selectedType && (
-              <input type="hidden" name="type" value={selectedType} />
             )}
             {selectedLevel && (
               <input type="hidden" name="level" value={selectedLevel} />
@@ -210,47 +197,7 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
             </div>
           </form>
 
-          {/* Type fast-toggles */}
           <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="font-semibold text-slate-500 mr-1 flex items-center gap-1">
-                <SlidersHorizontal className="w-3.5 h-3.5" />
-                Format:
-              </span>
-              <Link
-                href={makeFilterUrl({ type: undefined, page: "1" })}
-                className={`px-3 py-1 rounded-full font-medium transition ${
-                  !selectedType
-                    ? "bg-slate-900 text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                All Formats ({allCourses.length})
-              </Link>
-              <Link
-                href={makeFilterUrl({ type: "INTERNAL", page: "1" })}
-                className={`px-3 py-1 rounded-full font-medium transition flex items-center gap-1 ${
-                  selectedType === "INTERNAL"
-                    ? "bg-emerald-600 text-white"
-                    : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                }`}
-              >
-                <CheckCircle className="w-3 h-3" />
-                On Platform
-              </Link>
-              <Link
-                href={makeFilterUrl({ type: "EXTERNAL", page: "1" })}
-                className={`px-3 py-1 rounded-full font-medium transition flex items-center gap-1 ${
-                  selectedType === "EXTERNAL"
-                    ? "bg-blue-600 text-white"
-                    : "bg-blue-50 text-blue-700 hover:bg-blue-100"
-                }`}
-              >
-                <ExternalLink className="w-3 h-3" />
-                External (Udemy, etc.)
-              </Link>
-            </div>
-
             {/* Level filter */}
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="font-semibold text-slate-500 mr-1">Level:</span>
@@ -321,7 +268,7 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
             </div>
 
             {/* Reset all filters pill */}
-            {(query || selectedCategory || selectedType || selectedLevel) && (
+            {(query || selectedCategory || selectedLevel) && (
               <Link
                 href="/courses"
                 className="block text-center py-2 px-3 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold transition"

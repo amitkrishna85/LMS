@@ -21,13 +21,13 @@ async function main() {
   const admin = await prisma.user.upsert({
     where: { email: adminEmail },
     update: {
-      name: "Alex Vance (Admin)",
+      name: "Amit Krishna",
       role: Role.ADMIN,
       isActive: true,
       mustChangePassword: false,
     },
     create: {
-      name: "Alex Vance (Admin)",
+      name: "Amit Krishna",
       email: adminEmail,
       passwordHash: adminPasswordHash,
       role: Role.ADMIN,
@@ -232,7 +232,17 @@ async function main() {
     const existingHs = await prisma.homepageSection.findFirst({
       where: { title: hs.title },
     });
-    if (!existingHs) {
+    if (existingHs) {
+      await prisma.homepageSection.update({
+        where: { id: existingHs.id },
+        data: {
+          title: hs.title,
+          config: hs.config,
+          order: hs.order,
+          isVisible: hs.isVisible,
+        },
+      });
+    } else {
       await prisma.homepageSection.create({
         data: {
           type: hs.type as HomepageSectionType,

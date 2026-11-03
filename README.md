@@ -1,10 +1,10 @@
-# SkillPulse LMS — Modern Learning Platform & External Course Marketplace
+# Falkor Academy — Learning Platform
 
-SkillPulse is a production-ready, full-stack learning platform web application built with **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS**, **Prisma**, **PostgreSQL (Neon)**, and **Auth.js (NextAuth)**.
+Falkor Academy is a full-stack internal learning platform built with **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS**, **Prisma**, **PostgreSQL (Neon)**, and **Auth.js (NextAuth)**.
 
 It provides a unified enterprise learning experience by seamlessly combining:
 1. **Internal Courses:** In-house masterclasses with video, text, PDF, and interactive quiz lessons hosted directly on the platform with automated progress tracking and PDF certificate generation.
-2. **External Courses:** Curated direct links to accredited external courses (e.g., Udemy, Coursera, edX). Clicking "Go to course" opens the external URL in a new tab with explicit outbound notices, click telemetry, and student self-reported progress tracking.
+2. **External Courses:** Curated direct links to approved external learning resources. Clicking "Go to course" opens the external URL in a new tab with explicit outbound notices, click telemetry, and self-reported progress tracking.
 3. **Curated Learning Paths:** Admin-curated career roadmaps sequencing internal workshops and external certifications with composite progress tracking.
 
 ---
@@ -12,7 +12,7 @@ It provides a unified enterprise learning experience by seamlessly combining:
 ## 🚀 Key Features
 
 ### For Students
-- **Dynamic Catalog:** Fast, responsive course discovery with full-text search, category chips, level filters, and distinct badges (`On Platform` vs `External (Udemy)`).
+- **Dynamic Catalog:** Fast, responsive course discovery with full-text search, category chips, level filters, and distinct badges (`On Platform` vs `External (Partner)`).
 - **Interactive Roadmap View (`/paths/[slug]`):** Ordered career paths showing required vs. optional milestones, curator guidance notes, and completion checklists.
 - **Dedicated Classroom Player (`/learn/[slug]`):** Video lectures, rich architectural reading material, PDF manual downloads, interactive quiz assessments, collapsible curriculum sidebar, and position memory.
 - **Student Dashboard (`/dashboard`):** My enrolled courses, external courses tracked, enrolled roadmaps, verified **PDF Certificate generation** (downloadable in landscape format), and account security.
@@ -21,7 +21,7 @@ It provides a unified enterprise learning experience by seamlessly combining:
 ### For Administrators (`/admin`)
 - **Executive Dashboard:** Live metrics for users, courses, learning paths, and enrollments, plus audit activity feeds.
 - **Courses Management:** Table with status/type filters, search, pagination, bulk publish/archive/delete, and a full course editor.
-  - **External Courses:** Requires HTTPS validation, provider selection (Udemy, Coursera, YouTube, Other), and disclaimer generation.
+  - **External Courses:** Requires HTTPS validation, provider selection (Partner, Industry Provider, Other), and disclaimer generation.
   - **Internal Courses:** Visual curriculum builder with sections, lesson reordering, rich text editor, and media upload abstraction.
 - **Learning Paths Studio:** Visual builder to search, add, and sequence courses, mark steps as required/optional, and add milestone notes.
 - **Category Hierarchy:** Nested category manager.
@@ -74,6 +74,11 @@ cp .env.example .env
 | `BLOB_READ_WRITE_TOKEN` | Token if using Vercel Blob storage |
 | `RESEND_API_KEY` | (Optional) Resend API key for password reset emails |
 | `EMAIL_FROM` | Sender address for notifications |
+| `OPENAI_API_KEY` | Optional API key for AI-assisted course draft generation |
+| `OPENAI_MODEL` | Optional chat-completions model name (defaults to `gpt-4o-mini`) |
+
+### AI-Assisted Course Creation
+Administrators can use **Create with AI** to draft course details, outcomes, tags, and a written lesson from a course brief, or create courses manually. Course lessons can include videos, PowerPoint, Word, PDF, spreadsheet, audio, image, and text uploads, as well as written lessons. Uploaded files are attached as lessons but are not analyzed by AI. Configure `OPENAI_API_KEY` to enable draft generation. Course briefs are sent to the configured AI provider, so do not include confidential information.
 
 ---
 
@@ -129,21 +134,21 @@ npm run build
 
 ## 📖 Step-by-Step Tutorials
 
-### How to Add an External Udemy Course
+### How to Add an External Learning Course
 1. Sign in as an **Admin** at `/auth/login`.
 2. Navigate to **Courses** in the Admin sidebar (`/admin/courses`).
 3. Click **"Create Course"** at the top right.
 4. Set the **Course Type** toggle to **"External Course (Link)"**.
 5. Fill in the course details:
    - **Course Title:** e.g., *"Docker & Kubernetes: The Practical Guide"*
-   - **External URL:** Must be a valid `https://` link (e.g., `https://www.udemy.com/course/docker-kubernetes-the-practical-guide/`)
-   - **Provider:** Select `"Udemy"` from the dropdown.
+   - **External URL:** Must be a valid `https://` link (e.g., `https://example.com/course/docker-kubernetes-practical-guide`)
+   - **Provider:** Select a learning provider from the dropdown.
    - **Instructor Name:** Maximilian Schwarzmüller
    - **Level:** Intermediate
    - **Duration:** 1440 minutes (24 hours)
    - **Tags:** `Docker, Kubernetes, DevOps`
 6. Click **"Save Course"**.
-7. The course will now be available in the public directory with an `"External (Udemy)"` badge. When learners click **"Go to Course"**, an outbound notice modal explains that they will continue on Udemy, opens the course in a new tab with `rel="noopener noreferrer"`, and logs an outbound click event.
+7. The course will now be available in the public directory with an `"External (Partner)"` badge. When learners click **"Go to Course"**, an outbound notice modal explains that they will continue on the host learning platform, opens the course in a new tab with `rel="noopener noreferrer"`, and logs an outbound click event.
 
 ### How to Create a Learning Path (Internal + External Mixed)
 1. Go to **Learning Paths** (`/admin/paths`) in the Admin sidebar.
@@ -195,4 +200,4 @@ npm run build
 ---
 
 ## ⚖️ Compliance & Intellectual Property Notice
-SkillPulse uses original branding, layout, typography, and copywriting. It does not copy, scrape, proxy, or embed any third-party course videos or intellectual property. External links direct users directly to authorized partner platforms (such as Udemy and Coursera), respecting their content terms and user authentication models.
+Falkor Academy uses original branding, layout, typography, and copywriting. It does not copy, scrape, proxy, or embed any third-party course videos or intellectual property. External links direct users directly to approved learning platforms, respecting their content terms and user authentication models.

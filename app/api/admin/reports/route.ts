@@ -42,7 +42,7 @@ export async function GET() {
         id: c.id,
         title: c.title,
         type: c.type,
-        provider: c.type === "EXTERNAL" ? (c.externalProvider || "Udemy") : "Hosted",
+        provider: c.type === "EXTERNAL" ? (c.externalProvider || "Learning Partner") : "Hosted",
         category: c.category?.name || "General",
         level: c.level,
         enrollments: activeEnrollments,

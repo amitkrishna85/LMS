@@ -2,8 +2,8 @@ import { PublicNavbar } from "@/components/public/navbar";
 import { PublicFooter } from "@/components/public/footer";
 
 export const metadata = {
-  title: "Privacy Policy | SkillPulse",
-  description: "Privacy policy and learner data protection details for SkillPulse.",
+  title: "Privacy Policy | Falkor Academy",
+  description: "Privacy policy and learner data protection details for Falkor Academy.",
 };
 
 export default function PrivacyPage() {
@@ -60,13 +60,13 @@ export default function PrivacyPage() {
 
           <section className="space-y-2">
             <h2 className="text-base font-bold text-slate-900">
-              4. Third-Party Outbound Links
+              4. External Learning Resources
             </h2>
             <p>
-              When navigating to external providers like Udemy or Coursera, your
-              activity on their website is subject to their independent privacy
-              policies. SkillPulse does not receive or store your external login
-              passwords or payment information.
+              Where Falkor Academy links to external learning resources, those sites
+              operate under their own privacy practices. We do not receive or store
+              your external account credentials, payment information, or other data
+              beyond the learning records tracked within the academy platform.
             </p>
           </section>
         </div>

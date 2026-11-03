@@ -161,7 +161,7 @@ export async function GET(req: Request) {
         instructorName: c.instructorName,
         categoryName: "Design",
         externalUrl: c.externalUrl,
-        externalProvider: c.externalProvider || "Udemy",
+        externalProvider: c.externalProvider || "Learning Partner",
         durationMinutes: c.durationMinutes,
         status: idx === 0 ? "IN_PROGRESS" : "COMPLETED",
         markedAt: new Date(),

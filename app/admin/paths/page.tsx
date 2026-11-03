@@ -52,6 +52,12 @@ export default function AdminPathsPage() {
     loadPaths();
   }, []);
 
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("create") === "1") {
+      setShowCreateModal(true);
+    }
+  }, []);
+
   const handleCreatePath = async (e: React.FormEvent) => {
     e.preventDefault();
     try {

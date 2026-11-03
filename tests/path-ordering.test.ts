@@ -4,7 +4,7 @@ describe("Learning Path Sequence & Progress Calculation", () => {
   const samplePathItems = [
     { id: "item_3", courseId: "c3", order: 3, isRequired: true, title: "Kubernetes in Prod" },
     { id: "item_1", courseId: "c1", order: 1, isRequired: true, title: "Modern TS & Next.js" },
-    { id: "item_2", courseId: "c2", order: 2, isRequired: false, title: "Cloud Architecture (Udemy)" },
+    { id: "item_2", courseId: "c2", order: 2, isRequired: false, title: "Cloud Architecture (Partner Program)" },
   ];
 
   it("should sort learning path items strictly by sequential order", () => {

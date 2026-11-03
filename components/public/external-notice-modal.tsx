@@ -101,7 +101,7 @@ export function ExternalNoticeModal({
           {/* Self reporting tracker */}
           <div className="border-t border-slate-100 pt-4 mt-2">
             <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
-              Track Your Progress on SkillPulse
+              Track Your Progress in Falkor Academy
             </p>
             <div className="grid grid-cols-2 gap-2">
               <button

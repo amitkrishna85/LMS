@@ -20,7 +20,10 @@ export async function GET() {
       () => prisma.user.count({ where: { role: "STUDENT" } }),
       getMockUsers().filter((u) => u.role === "STUDENT").length
     );
-    const totalCourses = await safeDbQuery(() => prisma.course.count(), getMockCourses().length);
+    const totalCourses = await safeDbQuery(
+      () => prisma.course.count({ where: { type: "INTERNAL" } }),
+      getMockCourses().filter((c) => c.type === "INTERNAL").length
+    );
     const internalCourses = await safeDbQuery(
       () => prisma.course.count({ where: { type: "INTERNAL" } }),
       getMockCourses().filter((c) => c.type === "INTERNAL").length
@@ -37,7 +40,7 @@ export async function GET() {
       () =>
         prisma.course.findMany({
           take: 5,
-          where: { status: "PUBLISHED" },
+          where: { status: "PUBLISHED", type: "INTERNAL" },
           orderBy: { enrollments: { _count: "desc" } },
           select: {
             id: true,
@@ -49,7 +52,10 @@ export async function GET() {
             _count: { select: { enrollments: true } },
           },
         }),
-      getMockCourses().slice(0, 5).map((c, i) => ({
+      getMockCourses()
+        .filter((c) => c.type === "INTERNAL")
+        .slice(0, 5)
+        .map((c, i) => ({
         id: c.id,
         title: c.title,
         slug: c.slug,
@@ -57,7 +63,7 @@ export async function GET() {
         level: c.level,
         externalProvider: c.externalProvider,
         _count: { enrollments: 12 - i * 2 },
-      }))
+        }))
     );
 
     // 3. Fetch recent audit logs
@@ -75,7 +81,7 @@ export async function GET() {
           action: "COURSE_PUBLISH",
           entity: "Course",
           entityId: "crs_int_1",
-          actor: { name: "Alex Vance (Admin)", email: "admin@skillpulse.local" },
+          actor: { name: "Amit Krishna", email: "admin@skillpulse.local" },
           createdAt: new Date(),
           meta: JSON.stringify({ title: "Full-Stack TypeScript with Next.js & Prisma" }),
         },
@@ -85,7 +91,7 @@ export async function GET() {
           action: "USER_CREATE",
           entity: "User",
           entityId: "usr_student_3",
-          actor: { name: "Alex Vance (Admin)", email: "admin@skillpulse.local" },
+          actor: { name: "Amit Krishna", email: "admin@skillpulse.local" },
           createdAt: new Date(Date.now() - 3600000),
           meta: JSON.stringify({ email: "jordan@skillpulse.local", role: "STUDENT" }),
         },

@@ -6,7 +6,7 @@
 - **Color Palette:** Deep Indigo (`#1e1b4b`), Vibrant Violet (`#6366f1`), Slate neutrals (`#0f172a`, `#334155`), Emerald accent for completion (`#10b981`).
 - **Core Concept:**
   - **Internal Courses:** Full multi-section curriculum with video, reading, PDF, and quiz lessons hosted on the platform.
-  - **External Courses:** Curated external links (e.g., Udemy, Coursera, YouTube, Pluralsight) opening securely in a new tab with explicit disclaimers and self-reported progress tracking.
+  - **External Courses:** Curated external links to approved partner learning resources opening securely in a new tab with explicit disclaimers and self-reported progress tracking.
   - **Learning Paths:** Multi-course ordered journeys mixing internal and external courses with required/optional milestones and overall completion progress.
   - **Admin-Gated Enrollment:** No public self-registration. Admins provision accounts, batch import via CSV, reset passwords, and force initial password change.
 
@@ -50,7 +50,7 @@
 ### Milestone 3: Admin Course Management (Internal & External) (M3)
 - `/admin/courses` table: search, filters (Type: ALL/INTERNAL/EXTERNAL, Status: DRAFT/PUBLISHED/ARCHIVED, Category), sorting, pagination, bulk actions.
 - Course creation & edit workflow with type toggle:
-  - **External Course:** External URL validation (must be https), provider selector (Udemy, Coursera, YouTube, Other), instructor, level, tags, duration.
+  - **External Course:** External URL validation (must be https), provider selector (Learning Partner, Industry Provider, Other), instructor, level, tags, duration.
   - **Internal Course:** Curriculum Builder with Sections and Lessons, drag-and-drop / ordering controls, lesson types (VIDEO, TEXT, PDF, QUIZ), isPreview flag.
 - Storage abstraction for media uploads (thumbnails, PDFs, videos).
 - Rich-text editor integration with sanitized output.
@@ -68,10 +68,10 @@
 ### Milestone 5: Public Site & Search (M5)
 - Public Navbar and Footer with brand identity, theme toggle, and session-aware navigation.
 - Homepage: Hero section with live search input, featured learning paths, featured courses, category pill filters, and "Continue Learning" strip for authenticated users.
-- `/courses`: Instant search with debouncing, category/level/type/duration filters, sorting (newest, popular, title), pagination, badges distinguishing "On-Platform" vs "External (Udemy/etc.)".
+- `/courses`: Instant search with debouncing, category/level/type/duration filters, sorting (newest, popular, title), pagination, badges distinguishing "On-Platform" vs "External (Partner programs)".
 - `/courses/[slug]`:
   - Internal: Syllabus overview, preview lessons, instructor details, enrollment button.
-  - External: Clear external banner ("You will continue on Udemy"), outbound link button (`target="_blank" rel="noopener noreferrer"`), outbound click tracking event, and self-report status toggles.
+  - External: Clear external banner ("You will continue on the external learning platform"), outbound link button (`target="_blank" rel="noopener noreferrer"`), outbound click tracking event, and self-report status toggles.
 - `/paths` and `/paths/[slug]`: Interactive roadmap view with progress calculation, course cards, and step status.
 - Content Pages: About, Contact, Terms, Privacy.
 - SEO: Dynamic metadata, OpenGraph tags, JSON-LD schema, robots.txt, and DB-safe sitemap.xml.
@@ -105,5 +105,5 @@
   - External link URL validation & sanitize routines.
 - Playwright E2E smoke test:
   - Seed login -> navigate courses -> filter internal/external -> open course details -> test external outbound disclaimer.
-- Production README.md: Architecture, local setup, environment variables guide, Neon DB connection guide, step-by-step walkthrough for adding an external Udemy course and a learning path.
+- Production README.md: Architecture, local setup, environment variables guide, Neon DB connection guide, step-by-step walkthrough for adding an external learning course and a learning path.
 - Final build verification (`npm run build`).

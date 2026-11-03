@@ -266,7 +266,7 @@ export default function AdminCourseEditPage() {
                 </span>
               ) : (
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-semibold">
-                  External ({course.externalProvider || "Udemy"})
+                  External ({course.externalProvider || "Learning Partner"})
                 </span>
               )}
             </div>
@@ -433,7 +433,7 @@ export default function AdminCourseEditPage() {
                   type="url"
                   value={course.externalUrl || ""}
                   onChange={(e) => setCourse({ ...course, externalUrl: e.target.value })}
-                  placeholder="https://www.udemy.com/course/..."
+                  placeholder="https://example.com/course/..."
                   className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none font-mono"
                 />
               </div>
@@ -444,7 +444,7 @@ export default function AdminCourseEditPage() {
                 </label>
                 <input
                   type="text"
-                  value={course.externalProvider || "Udemy"}
+                  value={course.externalProvider || "Learning Partner"}
                   onChange={(e) => setCourse({ ...course, externalProvider: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none"
                 />
@@ -612,7 +612,7 @@ export default function AdminCourseEditPage() {
                 External Course Configuration
               </h3>
               <p className="text-xs text-slate-400 max-w-md mx-auto">
-                This course is delivered through an external provider ({course.externalProvider || "Udemy"}). Students enroll and are directed to the destination platform via a secure, tracked link.
+                This course is delivered through an external provider ({course.externalProvider || "Learning Partner"}). Students enroll and are directed to the destination platform via a secure, tracked link.
               </p>
               <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-left text-xs font-mono max-w-lg mx-auto">
                 <span className="text-slate-400 block mb-1">Target Outbound Link:</span>

@@ -33,9 +33,9 @@ export default function AdminDashboardPage() {
   const stats = data?.stats || {
     totalUsers: 4,
     totalStudents: 3,
-    totalCourses: 8,
+    totalCourses: 3,
     internalCourses: 3,
-    externalCourses: 5,
+    externalCourses: 0,
     totalPaths: 2,
     totalEnrollments: 14,
   };
@@ -55,7 +55,7 @@ export default function AdminDashboardPage() {
             </span>
           </h2>
           <p className="text-sm text-slate-400 mt-1">
-            Real-time platform metrics, course catalogs, and active student engagements.
+            Real-time platform metrics, course content, and active learner engagement.
           </p>
         </div>
 
@@ -113,7 +113,7 @@ export default function AdminDashboardPage() {
         <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800/80 shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Catalog Courses
+              Courses
             </span>
             <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
               <BookOpen className="w-4 h-4" />
@@ -124,11 +124,11 @@ export default function AdminDashboardPage() {
               {stats.totalCourses}
             </span>
             <span className="text-xs text-indigo-400 font-medium">
-              {stats.internalCourses} Internal / {stats.externalCourses} External
+              {stats.internalCourses} Admin-created
             </span>
           </div>
           <div className="mt-3 text-[11px] text-slate-400">
-            Internal modules & external Udemy/Coursera links
+            Administrator-produced video and written learning
           </div>
         </div>
 
@@ -206,7 +206,7 @@ export default function AdminDashboardPage() {
                       ) : (
                         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1">
                           <ExternalLink className="w-2.5 h-2.5" />
-                          <span>External ({c.externalProvider || "Udemy"})</span>
+                          <span>Legacy course</span>
                         </span>
                       )}
                       <span className="text-[10px] uppercase font-semibold text-slate-500">

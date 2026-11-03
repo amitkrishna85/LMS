@@ -3,9 +3,8 @@ import { PublicFooter } from "@/components/public/footer";
 import { Compass, ShieldCheck, Award, Route, CheckCircle } from "lucide-react";
 
 export const metadata = {
-  title: "About SkillPulse Academy | Enterprise Learning Architecture",
-  description:
-    "SkillPulse delivers a unified learning experience blending proprietary internal masterclasses with verified external credentials.",
+  title: "About Falkor Academy | Internal Learning Platform",
+  description: "Falkor Academy delivers a unified learning experience built for company-wide skills growth and certification.",
 };
 
 export default function AboutPage() {
@@ -19,12 +18,11 @@ export default function AboutPage() {
             <Compass className="w-6 h-6" />
           </div>
           <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
-            About SkillPulse
+            About Falkor Academy
           </h1>
           <p className="mt-4 text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
             Reinventing workforce capability development with original,
-            curated learning tracks that combine in-house technical workshops
-            and world-class external certifications.
+            curated learning paths built around internal expertise and practical growth.
           </p>
         </div>
       </div>
@@ -33,16 +31,15 @@ export default function AboutPage() {
         <section className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-4">
           <h2 className="text-xl font-bold text-slate-900">Our Mission</h2>
           <p>
-            Modern engineering and leadership teams need rapid access to both
-            specialized proprietary architectures and accredited industry
-            credentials. SkillPulse was engineered as a single, centralized
-            learning marketplace designed to eliminate bookmark sprawl and fragmented
-            learning portals.
+            Modern engineering and leadership teams need rapid access to the
+            specialized knowledge and capabilities that support real business goals.
+            Falkor Academy was engineered as a centralized learning platform that
+            simplifies training, certification, and team growth in one experience.
           </p>
           <p>
             Platform administrators curate high-impact internal video and text
-            workshops while seamlessly linking students to external programs on
-            Udemy, Coursera, and other leading educational providers.
+            workshops, structured programs, and role-based learning paths without
+            forcing employees to navigate fragmented systems.
           </p>
         </section>
 
@@ -78,14 +75,13 @@ export default function AboutPage() {
 
         <section className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-3">
           <h2 className="text-xl font-bold text-slate-900">
-            External Content Policy & Compliance
+            Internal Learning Policy & Quality
           </h2>
           <p>
-            SkillPulse respects intellectual property rights and adheres to all
-            fair linking best practices. We do not scrape, republish, or embed
-            third-party video players. When a learner accesses an external
-            course (such as on Udemy or Coursera), they are directed in a new tab
-            to the official provider where they log in with their own account.
+            Falkor Academy prioritizes clear ownership, curated learning paths,
+            and high-quality internal content created for real business outcomes.
+            We keep course material, assessments, and certifications aligned with
+            the needs of the company and the people it serves.
           </p>
         </section>
       </div>

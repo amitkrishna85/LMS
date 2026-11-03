@@ -1,19 +1,27 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Settings, Save, ShieldCheck, Mail, Palette, Globe } from "lucide-react";
+import { Settings, Save, ShieldCheck, Mail, Palette, Globe, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { BRAND_NAME, DEFAULT_TAGLINE, DEFAULT_FOOTER_TEXT, DEFAULT_SITE_COLOR } from "@/lib/brand";
 
 export default function AdminSettingsPage() {
-  const [form, setForm] = useState({
-    siteName: "SkillPulse",
+  const [form, setForm] = useState<{
+    siteName: string;
+    logoUrl: string;
+    primaryColor: string;
+    tagline: string;
+    footerText: string;
+    socialLinks: string;
+  }>({
+    siteName: BRAND_NAME,
     logoUrl: "",
-    primaryColor: "#6366f1",
-    footerText: "© 2026 SkillPulse Learning Platform. All rights reserved.",
+    primaryColor: DEFAULT_SITE_COLOR,
+    tagline: DEFAULT_TAGLINE,
+    footerText: DEFAULT_FOOTER_TEXT,
     socialLinks: JSON.stringify({
       twitter: "https://twitter.com",
       github: "https://github.com",
-      linkedin: "https://linkedin.com",
     }),
   });
 
@@ -113,6 +121,19 @@ export default function AdminSettingsPage() {
                 className="w-32 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 text-xs font-mono"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block font-semibold text-slate-300 mb-1 flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-indigo-400" />
+              <span>Tagline</span>
+            </label>
+            <input
+              type="text"
+              value={form.tagline || DEFAULT_TAGLINE}
+              onChange={(e) => setForm({ ...form, tagline: e.target.value })}
+              className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            />
           </div>
 
           <div>

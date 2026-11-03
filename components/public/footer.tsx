@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Compass, ExternalLink, ShieldCheck, Heart } from "lucide-react";
+import { Compass, ShieldCheck } from "lucide-react";
+import { BRAND_NAME } from "@/lib/brand";
 
 export function PublicFooter() {
   return (
@@ -13,12 +14,12 @@ export function PublicFooter() {
                 <Compass className="w-4 h-4" />
               </div>
               <span className="text-xl font-bold tracking-tight text-white">
-                SkillPulse
+                {BRAND_NAME}
               </span>
             </Link>
             <p className="text-sm text-slate-400 leading-relaxed">
-              A curated learning marketplace delivering internal masterclasses
-              and direct links to premier external courses across the web.
+              A learning platform with practical video and written courses,
+              guided programs, and tools to support continuous growth.
             </p>
             <div className="flex items-center gap-2 text-xs text-emerald-400 font-medium">
               <ShieldCheck className="w-4 h-4" />
@@ -50,10 +51,10 @@ export function PublicFooter() {
               </li>
               <li>
                 <Link
-                  href="/courses?type=EXTERNAL"
+                  href="/courses"
                   className="hover:text-white transition-colors"
                 >
-                  External Curated Links
+                  Featured Programs
                 </Link>
               </li>
               <li>
@@ -78,7 +79,7 @@ export function PublicFooter() {
                   href="/about"
                   className="hover:text-white transition-colors"
                 >
-                  About SkillPulse
+                  About Falkor Academy
                 </Link>
               </li>
               <li>
@@ -108,23 +109,19 @@ export function PublicFooter() {
             </ul>
           </div>
 
-          {/* External disclaimer & compliance notice */}
           <div className="bg-slate-800/60 p-4 rounded-xl border border-slate-700/50">
-            <h4 className="text-xs font-semibold text-slate-200 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
-              External Course Notice
+            <h4 className="text-xs font-semibold text-slate-200 uppercase tracking-wider mb-2">
+              Learning Environment
             </h4>
             <p className="text-xs text-slate-400 leading-relaxed">
-              SkillPulse provides direct links to trusted educational providers
-              (e.g., Udemy, Coursera). We do not host or reproduce third-party
-              content. External courses require authentication on the host
-              platform.
+              Discover expert-created courses, videos, and written lessons in one
+              welcoming place to learn and grow.
             </p>
           </div>
         </div>
 
         <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <p>© {new Date().getFullYear()} SkillPulse Academy. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} {BRAND_NAME}. All rights reserved.</p>
           <p className="flex items-center gap-1">
             Built for enterprise engineering and continuous learning
           </p>

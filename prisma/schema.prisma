@@ -128,7 +128,7 @@ model Course {
   category         Category     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   type             CourseType   @default(INTERNAL)
   externalUrl      String?
-  externalProvider String?      // e.g. "Udemy", "Coursera", "YouTube", "Other"
+  externalProvider String?      // e.g. "Learning Partner", "Industry Provider", "Other"
   status           CourseStatus @default(DRAFT)
   isFeatured       Boolean      @default(false)
   sortOrder        Int          @default(0)
@@ -287,10 +287,11 @@ model HomepageSection {
 
 model SiteSettings {
   id           String   @id @default("default")
-  siteName     String   @default("SkillPulse")
+  siteName     String   @default("Falkor Academy")
   logoUrl      String?
   primaryColor String   @default("#6366f1")
-  footerText   String   @default("© 2026 SkillPulse. All rights reserved.")
+  tagline      String   @default("Learn, grow and get certified at Falkor.")
+  footerText   String   @default("© 2026 Falkor Academy. All rights reserved.")
   socialLinks  String   @default("{}") // JSON string
   updatedAt    DateTime @updatedAt
 }

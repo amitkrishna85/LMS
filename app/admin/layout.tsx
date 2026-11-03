@@ -3,7 +3,7 @@ import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { AdminNavbar } from "@/components/admin/admin-navbar";
 
 export const metadata = {
-  title: "Admin Console | SkillPulse",
+  title: "Admin Console | Falkor Academy",
   description: "Manage courses, learning paths, students, and platform configurations.",
 };
 

@@ -6,7 +6,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Compass,
-  BookOpen,
   Route,
   Search,
   User,
@@ -17,6 +16,7 @@ import {
   X,
   ChevronDown,
 } from "lucide-react";
+import { BRAND_NAME, BRAND_SHORT_NAME } from "@/lib/brand";
 
 export function PublicNavbar() {
   const { data: session } = useSession();
@@ -44,10 +44,10 @@ export function PublicNavbar() {
               </div>
               <div className="flex flex-col">
                 <span className="text-xl font-bold tracking-tight text-slate-900 group-hover:text-indigo-600 transition-colors">
-                  SkillPulse
+                  {BRAND_SHORT_NAME}
                 </span>
                 <span className="text-[10px] uppercase font-semibold text-indigo-600 -mt-1 tracking-wider">
-                  Academy
+                  {BRAND_NAME.replace(`${BRAND_SHORT_NAME} `, "")}
                 </span>
               </div>
             </Link>
@@ -55,25 +55,39 @@ export function PublicNavbar() {
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-1 font-medium text-sm text-slate-600">
               <Link
+                href="/"
+                className="px-3 py-2 rounded-lg hover:text-indigo-600 hover:bg-slate-50 transition-colors"
+              >
+                Home
+              </Link>
+              <Link
                 href="/courses"
                 className="px-3 py-2 rounded-lg hover:text-indigo-600 hover:bg-slate-50 transition-colors flex items-center gap-1.5"
               >
-                <BookOpen className="w-4 h-4" />
-                Courses
+                <Search className="w-4 h-4" />
+                Search
               </Link>
               <Link
                 href="/paths"
                 className="px-3 py-2 rounded-lg hover:text-indigo-600 hover:bg-slate-50 transition-colors flex items-center gap-1.5"
               >
                 <Route className="w-4 h-4" />
-                Learning Paths
+                Discover
               </Link>
               <Link
-                href="/about"
+                href="/dashboard"
                 className="px-3 py-2 rounded-lg hover:text-indigo-600 hover:bg-slate-50 transition-colors"
               >
-                About
+                My Library
               </Link>
+              {session?.user?.role === "ADMIN" && (
+                <Link
+                  href="/admin/courses"
+                  className="px-3 py-2 rounded-lg hover:text-indigo-600 hover:bg-slate-50 transition-colors"
+                >
+                  Create
+                </Link>
+              )}
             </nav>
           </div>
 
@@ -85,7 +99,7 @@ export function PublicNavbar() {
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search internal & external courses, skills, topics..."
+              placeholder="Search courses, skills, and programs..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-1.5 text-sm bg-slate-100 hover:bg-slate-50 focus:bg-white border border-transparent focus:border-indigo-400 rounded-full transition-all outline-none"
@@ -130,7 +144,7 @@ export function PublicNavbar() {
                       className="flex items-center gap-2 px-4 py-2 text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
                     >
                       <LayoutDashboard className="w-4 h-4 text-slate-400" />
-                      My Learning Dashboard
+                      My Library
                     </Link>
 
                     {session.user.role === "ADMIN" && (
@@ -194,26 +208,22 @@ export function PublicNavbar() {
                 className="w-full pl-9 pr-4 py-2 text-sm bg-slate-100 border border-transparent rounded-lg outline-none"
               />
             </form>
+            <Link href="/" onClick={() => setIsMenuOpen(false)} className="block px-3 py-2 rounded-lg text-base font-medium text-slate-700 hover:bg-slate-100">
+              Home
+            </Link>
             <Link
               href="/courses"
               onClick={() => setIsMenuOpen(false)}
               className="block px-3 py-2 rounded-lg text-base font-medium text-slate-700 hover:bg-slate-100"
             >
-              Explore Courses
+              Search
             </Link>
             <Link
               href="/paths"
               onClick={() => setIsMenuOpen(false)}
               className="block px-3 py-2 rounded-lg text-base font-medium text-slate-700 hover:bg-slate-100"
             >
-              Learning Paths
-            </Link>
-            <Link
-              href="/about"
-              onClick={() => setIsMenuOpen(false)}
-              className="block px-3 py-2 rounded-lg text-base font-medium text-slate-700 hover:bg-slate-100"
-            >
-              About SkillPulse
+              Discover
             </Link>
             {session?.user && (
               <Link
@@ -221,7 +231,16 @@ export function PublicNavbar() {
                 onClick={() => setIsMenuOpen(false)}
                 className="block px-3 py-2 rounded-lg text-base font-medium text-indigo-600 hover:bg-indigo-50"
               >
-                My Dashboard
+                My Library
+              </Link>
+            )}
+            {session?.user?.role === "ADMIN" && (
+              <Link
+                href="/admin/courses"
+                onClick={() => setIsMenuOpen(false)}
+                className="block px-3 py-2 rounded-lg text-base font-medium text-indigo-600 hover:bg-indigo-50"
+              >
+                Create
               </Link>
             )}
           </div>

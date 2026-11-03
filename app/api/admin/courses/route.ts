@@ -14,6 +14,21 @@ const courseSchema = z
     shortDescription: z.string().min(2, "Short description must be at least 2 characters").default("Comprehensive course curriculum"),
     description: z.string().min(2, "Detailed description must be at least 2 characters").default("Comprehensive course curriculum covering essential techniques, architecture, and practical implementations."),
     thumbnailUrl: z.string().nullable().optional(),
+    videoUrl: z
+      .string()
+      .regex(/^(https:\/\/|\/uploads\/)/, "A valid uploaded video URL is required")
+      .optional(),
+    uploadedFiles: z
+      .array(
+        z.object({
+          name: z.string().trim().min(1).max(255),
+          url: z.string().regex(/^(https:\/\/|\/uploads\/)/),
+          contentType: z.string().max(150).default("application/octet-stream"),
+        })
+      )
+      .max(50)
+      .default([]),
+    writtenContent: z.string().max(50000).optional(),
     instructorName: z.string().min(1, "Instructor name is required").default("Expert Instructor"),
     level: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]).default("BEGINNER"),
     language: z.string().default("English"),
@@ -38,6 +53,19 @@ const courseSchema = z
     {
       message: "External courses require a valid https:// URL",
       path: ["externalUrl"],
+    }
+  )
+  .refine(
+    (data) =>
+      data.type === "EXTERNAL" ||
+      Boolean(
+        data.videoUrl ||
+          data.uploadedFiles.length > 0 ||
+          data.writtenContent?.trim()
+      ),
+    {
+      message: "Add a video or written lesson content.",
+      path: ["writtenContent"],
     }
   );
 
@@ -200,6 +228,50 @@ export async function POST(req: Request) {
       finalSlug = `${baseSlug}-${Date.now().toString().slice(-4)}`;
     }
 
+    const lessonCreates = [
+      ...(data.videoUrl
+        ? [
+            {
+              title: data.title,
+              type: "VIDEO" as const,
+              contentUrl: data.videoUrl,
+              durationMinutes: data.durationMinutes,
+              order: 1,
+            },
+          ]
+        : []),
+      ...data.uploadedFiles.map((file, index) => {
+        const extension = file.name.split(".").pop()?.toLowerCase();
+        const isVideo = [
+          "mp4",
+          "m4v",
+          "mov",
+          "webm",
+          "avi",
+          "mkv",
+        ].includes(extension || "");
+        return {
+          title: file.name,
+          type: isVideo ? ("VIDEO" as const) : ("PDF" as const),
+          contentUrl: file.url,
+          durationMinutes: isVideo ? 10 : 1,
+          order: (data.videoUrl ? 2 : 1) + index,
+        };
+      }),
+      ...(data.writtenContent?.trim()
+        ? [
+            {
+              title: `${data.title} - Written lesson`,
+              type: "TEXT" as const,
+              body: data.writtenContent,
+              durationMinutes: Math.max(1, Math.ceil(data.writtenContent.length / 1000)),
+              order:
+                (data.videoUrl ? 2 : 1) + data.uploadedFiles.length,
+            },
+          ]
+        : []),
+    ];
+
     const course = await safeDbQuery(
       () =>
         prisma.course.create({
@@ -217,14 +289,35 @@ export async function POST(req: Request) {
             categoryId: data.categoryId,
             type: data.type,
             externalUrl: data.type === "EXTERNAL" ? data.externalUrl : null,
-            externalProvider: data.type === "EXTERNAL" ? (data.externalProvider || "Udemy") : null,
+            externalProvider: data.type === "EXTERNAL" ? (data.externalProvider || "Learning Partner") : null,
             status: data.status,
             isFeatured: data.isFeatured,
+            sections: {
+              create: [
+                {
+                  title: "Course content",
+                  order: 1,
+                  lessons: { create: lessonCreates },
+                },
+              ],
+            },
           },
+          include: { sections: true },
         }),
       {
         id: "course_" + Date.now(),
         ...data,
+        sections: [
+          {
+            id: `section_${Date.now()}`,
+            title: "Course content",
+            order: 1,
+            lessons: lessonCreates.map((lesson, index) => ({
+              id: `lesson_${Date.now()}_${index}`,
+              ...lesson,
+            })),
+          },
+        ],
         slug: finalSlug,
         createdAt: new Date(),
         updatedAt: new Date(),

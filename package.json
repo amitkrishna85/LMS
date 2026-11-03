@@ -1,10 +1,10 @@
 {
-  "name": "skillpulse-lms",
+  "name": "falkor-academy",
   "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "node scripts/check-brand.mjs && prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",

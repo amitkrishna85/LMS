@@ -264,11 +264,10 @@ export function CoursePlayerClient({
                     <FileDown className="w-7 h-7" />
                   </div>
                   <h3 className="text-lg font-bold text-white">
-                    Downloadable Course PDF Document
+                    Downloadable Course Resource
                   </h3>
                   <p className="text-xs text-slate-400 max-w-md mx-auto">
-                    Reference manual, cheat sheet, and offline study notes for{" "}
-                    {currentLesson?.title}.
+                    Download this course resource to view or use it with your preferred application.
                   </p>
                   <a
                     href={currentLesson?.contentUrl || "#"}
@@ -277,7 +276,7 @@ export function CoursePlayerClient({
                     className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md transition"
                   >
                     <FileDown className="w-4 h-4" />
-                    <span>Download PDF Manual</span>
+                    <span>Download Resource</span>
                   </a>
                 </div>
               )}

@@ -31,7 +31,6 @@ export default function AdminCoursesPage() {
 
   // Filters & Pagination
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [sort, setSort] = useState("newest");
@@ -44,6 +43,13 @@ export default function AdminCoursesPage() {
   // Create Modal State
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [uploadingCourseFiles, setUploadingCourseFiles] = useState(false);
+  const [uploadedCourseFiles, setUploadedCourseFiles] = useState<
+    { name: string; url: string; contentType: string }[]
+  >([]);
+  const [generatingCourse, setGeneratingCourse] = useState(false);
+  const [creationMode, setCreationMode] = useState<"AI" | "MANUAL">("AI");
+  const [courseBrief, setCourseBrief] = useState("");
 
   // Course Form
   const [courseForm, setCourseForm] = useState({
@@ -51,18 +57,23 @@ export default function AdminCoursesPage() {
     shortDescription: "",
     description: "",
     thumbnailUrl: "",
-    instructorName: "",
+    instructorName: "Falkor Academy",
     level: "BEGINNER",
     language: "English",
     durationMinutes: 60,
-    tagsString: "WebDev, React",
+    tagsString: "",
     categoryId: "",
-    type: "INTERNAL" as "INTERNAL" | "EXTERNAL",
-    externalUrl: "",
-    externalProvider: "Udemy",
-    status: "PUBLISHED" as "DRAFT" | "PUBLISHED" | "ARCHIVED",
+    type: "INTERNAL" as const,
+    status: "DRAFT" as "DRAFT" | "PUBLISHED" | "ARCHIVED",
     isFeatured: false,
+    writtenContent: "",
   });
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("create") === "1") {
+      setShowCreateModal(true);
+    }
+  }, []);
 
   // Fetch Categories
   useEffect(() => {
@@ -84,7 +95,7 @@ export default function AdminCoursesPage() {
       page: page.toString(),
       limit: "10",
       search,
-      type: typeFilter,
+      type: "INTERNAL",
       status: statusFilter,
       categoryId: categoryFilter,
       sort,
@@ -105,7 +116,7 @@ export default function AdminCoursesPage() {
 
   useEffect(() => {
     fetchCourses();
-  }, [page, typeFilter, statusFilter, categoryFilter, sort]);
+  }, [page, statusFilter, categoryFilter, sort]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -144,15 +155,109 @@ export default function AdminCoursesPage() {
     }
   };
 
+  const handleCourseFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    let files = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (files.length === 0) return;
+    const remainingSlots = 50 - uploadedCourseFiles.length;
+    if (files.length > remainingSlots) {
+      toast.error("A course can include up to 50 uploaded files.");
+      files = files.slice(0, remainingSlots);
+    }
+    if (files.length === 0) return;
+
+    setUploadingCourseFiles(true);
+    let uploadedCount = 0;
+    try {
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append(
+          "folder",
+          file.type.startsWith("video/") ? "videos" : "materials"
+        );
+
+        const res = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          toast.error(`${file.name}: ${data.error || "Upload failed"}`);
+          continue;
+        }
+        setUploadedCourseFiles((current) => [...current, {
+          name: file.name,
+          url: data.url,
+          contentType: data.contentType || file.type,
+        }]);
+        uploadedCount += 1;
+      }
+
+      if (uploadedCount > 0) {
+        toast.success(`${uploadedCount} course file(s) uploaded`);
+      }
+    } catch {
+      toast.error("Network error while uploading course files.");
+    } finally {
+      setUploadingCourseFiles(false);
+    }
+  };
+
+  const generateCourseDraft = async () => {
+    if (courseBrief.trim().length < 20) {
+      toast.error("Describe the course in at least 20 characters.");
+      return;
+    }
+    setGeneratingCourse(true);
+    try {
+      const res = await fetch("/api/admin/courses/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          brief: courseBrief,
+          level: courseForm.level,
+          language: courseForm.language,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "AI could not generate a course draft.");
+        return;
+      }
+
+      const generated = data.course;
+      setCourseForm((prev) => ({
+        ...prev,
+        title: generated.title,
+        shortDescription: generated.shortDescription,
+        description: `${generated.description}\n\nLearning outcomes:\n${generated.outcomes
+          .map((outcome: string) => `- ${outcome}`)
+          .join("\n")}`,
+        durationMinutes: generated.durationMinutes,
+        tagsString: generated.tags.join(", "),
+        writtenContent: generated.writtenLesson,
+        status: "DRAFT",
+      }));
+      toast.success("AI draft ready. Review and edit it before saving.");
+    } catch {
+      toast.error("Network error while generating the course draft.");
+    } finally {
+      setGeneratingCourse(false);
+    }
+  };
+
   // Create Course Submit
   const handleCreateCourse = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (courseForm.type === "EXTERNAL") {
-      if (!courseForm.externalUrl || !courseForm.externalUrl.startsWith("https://")) {
-        toast.error("External course URL must begin with https://");
-        return;
-      }
+    if (
+      uploadedCourseFiles.length === 0 &&
+      !courseForm.writtenContent.trim()
+    ) {
+      toast.error("Add a video, course file, or written lesson before saving.");
+      return;
     }
 
     const tags = courseForm.tagsString
@@ -166,7 +271,9 @@ export default function AdminCoursesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...courseForm,
+          uploadedFiles: uploadedCourseFiles,
           tags,
+          type: "INTERNAL",
           durationMinutes: Number(courseForm.durationMinutes) || 60,
         }),
       });
@@ -183,7 +290,10 @@ export default function AdminCoursesPage() {
             name: "Engineering",
             slug: "swe",
           },
-          _count: { sections: 0, enrollments: 0 },
+          _count: {
+            sections: created.sections?.length || 0,
+            enrollments: 0,
+          },
         };
         setCourses((prev) => [formatted, ...prev.filter((c) => c.id !== formatted.id)]);
         setPagination((prev) => ({ ...prev, total: prev.total + 1 }));
@@ -194,18 +304,20 @@ export default function AdminCoursesPage() {
           shortDescription: "",
           description: "",
           thumbnailUrl: "",
-          instructorName: "",
+          instructorName: "Falkor Academy",
           level: "BEGINNER",
           language: "English",
           durationMinutes: 60,
-          tagsString: "WebDev, React",
+          tagsString: "",
           categoryId: categories[0]?.id || "",
           type: "INTERNAL",
-          externalUrl: "",
-          externalProvider: "Udemy",
-          status: "PUBLISHED",
+          status: "DRAFT",
           isFeatured: false,
+          writtenContent: "",
         });
+        setUploadedCourseFiles([]);
+        setCourseBrief("");
+        setCreationMode("AI");
         fetchCourses();
       }
     } catch {
@@ -265,7 +377,7 @@ export default function AdminCoursesPage() {
             <span>Course Catalog Management</span>
           </h2>
           <p className="text-sm text-slate-400 mt-1">
-            Manage hosted internal masterclasses and external course links (Udemy, Coursera, etc.).
+            Create and manage courses with administrator-produced video and written lessons.
           </p>
         </div>
 
@@ -320,17 +432,6 @@ export default function AdminCoursesPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-          {/* Type Filter */}
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-300 text-xs focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-          >
-            <option value="">All Course Types</option>
-            <option value="INTERNAL">Internal (Hosted)</option>
-            <option value="EXTERNAL">External (Link)</option>
-          </select>
-
           {/* Status Filter */}
           <select
             value={statusFilter}
@@ -385,7 +486,7 @@ export default function AdminCoursesPage() {
                   />
                 </th>
                 <th className="p-4">Course Details</th>
-                <th className="p-4">Delivery Type</th>
+                <th className="p-4">Format</th>
                 <th className="p-4">Category</th>
                 <th className="p-4">Level / Duration</th>
                 <th className="p-4">Status</th>
@@ -459,7 +560,7 @@ export default function AdminCoursesPage() {
                         ) : (
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/20">
                             <ExternalLink className="w-3 h-3" />
-                            <span>External ({c.externalProvider || "Udemy"})</span>
+                            <span>External ({c.externalProvider || "Learning Partner"})</span>
                           </span>
                         )}
                       </td>
@@ -552,103 +653,135 @@ export default function AdminCoursesPage() {
               <div>
                 <h3 className="text-lg font-bold text-white">Create New Course</h3>
                 <p className="text-xs text-slate-400">
-                  Select delivery type: internal course hosted here or curated external course link.
+                  Add video or written lessons, then enter course details or prepare a draft with AI.
                 </p>
               </div>
             </div>
 
             <form onSubmit={handleCreateCourse} className="space-y-4 text-xs">
-              {/* Type Switcher Toggle */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-2">
-                  Course Delivery Format
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <div
-                    onClick={() => setCourseForm({ ...courseForm, type: "INTERNAL" })}
-                    className={`p-3.5 rounded-xl border cursor-pointer transition flex items-start gap-3 ${
-                      courseForm.type === "INTERNAL"
-                        ? "bg-indigo-600/10 border-indigo-500 text-white"
-                        : "bg-slate-800/60 border-slate-700 text-slate-400 hover:bg-slate-800"
-                    }`}
-                  >
-                    <Layers className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
-                    <div>
-                      <div className="font-semibold text-slate-200">
-                        Internal Course (Hosted)
-                      </div>
-                      <div className="text-[11px] text-slate-400 mt-0.5">
-                        Upload videos, text lessons, PDFs, and quizzes inside the built-in LMS player.
-                      </div>
-                    </div>
-                  </div>
-
-                  <div
-                    onClick={() => setCourseForm({ ...courseForm, type: "EXTERNAL" })}
-                    className={`p-3.5 rounded-xl border cursor-pointer transition flex items-start gap-3 ${
-                      courseForm.type === "EXTERNAL"
-                        ? "bg-amber-500/10 border-amber-500 text-white"
-                        : "bg-slate-800/60 border-slate-700 text-slate-400 hover:bg-slate-800"
-                    }`}
-                  >
-                    <ExternalLink className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-                    <div>
-                      <div className="font-semibold text-slate-200">
-                        External Course (Link)
-                      </div>
-                      <div className="text-[11px] text-slate-400 mt-0.5">
-                        Curate a course on Udemy, Coursera, or edX. Opens in a new tab with self-reported progress.
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div className="flex gap-2 rounded-xl bg-slate-950 p-1">
+                <button
+                  type="button"
+                  onClick={() => setCreationMode("AI")}
+                  className={`flex-1 rounded-lg px-3 py-2 font-semibold transition ${
+                    creationMode === "AI" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <Sparkles className="mr-1.5 inline h-3.5 w-3.5" />
+                  Create with AI
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCreationMode("MANUAL")}
+                  className={`flex-1 rounded-lg px-3 py-2 font-semibold transition ${
+                    creationMode === "MANUAL" ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  Create manually
+                </button>
               </div>
 
-              {/* External Provider Fields */}
-              {courseForm.type === "EXTERNAL" && (
-                <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/20 space-y-3">
-                  <div className="flex items-center gap-1.5 text-amber-300 font-semibold text-xs">
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    <span>External Course Configuration</span>
+              {creationMode === "AI" && (
+                <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-4 space-y-3">
+                  <div className="flex items-center gap-2 font-semibold text-indigo-200">
+                    <Sparkles className="h-4 w-4" />
+                    AI course assistant
                   </div>
-
-                  <div>
-                    <label className="block text-slate-300 font-medium mb-1">
-                      External Course URL (https:// only) *
-                    </label>
-                    <input
-                      type="url"
-                      required
-                      value={courseForm.externalUrl}
-                      onChange={(e) =>
-                        setCourseForm({ ...courseForm, externalUrl: e.target.value })
-                      }
-                      placeholder="https://www.udemy.com/course/..."
-                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-300 font-medium mb-1">
-                      Provider Name
-                    </label>
-                    <select
-                      value={courseForm.externalProvider}
-                      onChange={(e) =>
-                        setCourseForm({ ...courseForm, externalProvider: e.target.value })
-                      }
-                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 text-xs focus:ring-2 focus:ring-amber-500 focus:outline-none"
-                    >
-                      <option value="Udemy">Udemy</option>
-                      <option value="Coursera">Coursera</option>
-                      <option value="YouTube">YouTube</option>
-                      <option value="edX">edX</option>
-                      <option value="Pluralsight">Pluralsight</option>
-                      <option value="Other">Other Platform</option>
-                    </select>
-                  </div>
+                  <label className="block text-slate-300 font-medium" htmlFor="course-ai-brief">
+                    Describe the course and what learners should take away
+                  </label>
+                  <textarea
+                    id="course-ai-brief"
+                    rows={3}
+                    value={courseBrief}
+                    onChange={(e) => setCourseBrief(e.target.value)}
+                    placeholder="Describe the subject, key concepts, and intended audience..."
+                    className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <p className="text-[11px] leading-relaxed text-slate-400">
+                    AI drafts course details and a written lesson from your brief. The brief is sent to the configured AI provider.
+                    Uploaded files are attached as lessons but are not analyzed by AI. Do not include confidential information in the brief.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={generateCourseDraft}
+                    disabled={generatingCourse}
+                    className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    {generatingCourse ? "Generating draft..." : "Generate course draft"}
+                  </button>
                 </div>
               )}
+
+              <div className="rounded-xl border border-slate-700 bg-slate-950/60 p-4">
+                <label className="mb-2 block font-semibold text-slate-200">
+                  Upload course content <span className="text-slate-500">(optional)</span>
+                </label>
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 font-semibold text-slate-200 hover:bg-slate-700">
+                    <Upload className="h-4 w-4 text-indigo-400" />
+                    {uploadingCourseFiles ? "Uploading..." : "Choose files"}
+                    <input
+                      type="file"
+                      multiple
+                      accept="video/*,.pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.csv,.txt,.rtf,.mp3,.wav,.m4a,.jpg,.jpeg,.png,.gif"
+                      onChange={handleCourseFileUpload}
+                      disabled={uploadingCourseFiles}
+                      className="hidden"
+                    />
+                  </label>
+                  <span className="text-slate-400">
+                    Video, PowerPoint, Word, PDF, spreadsheets, audio, images, and text files. Max 100 MB per file; up to 50 files.
+                  </span>
+                </div>
+                {uploadedCourseFiles.length > 0 && (
+                  <ul className="mt-3 space-y-2">
+                    {uploadedCourseFiles.map((file, index) => (
+                      <li
+                        key={`${file.url}-${index}`}
+                        className="flex items-center justify-between gap-3 rounded-lg bg-slate-800 px-3 py-2 text-slate-300"
+                      >
+                        <span className="truncate">{file.name}</span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setUploadedCourseFiles((current) =>
+                              current.filter((_, fileIndex) => fileIndex !== index)
+                            )
+                          }
+                          className="shrink-0 text-rose-300 hover:text-rose-200"
+                        >
+                          Remove
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="course-written-content"
+                  className="mb-2 block font-semibold text-slate-200"
+                >
+                  Written lesson <span className="text-slate-500">(optional)</span>
+                </label>
+                <textarea
+                  id="course-written-content"
+                  rows={5}
+                  maxLength={50000}
+                  value={courseForm.writtenContent}
+                  onChange={(e) =>
+                    setCourseForm({ ...courseForm, writtenContent: e.target.value })
+                  }
+                  placeholder="Add written learning content, notes, or an AI-generated lesson..."
+                  className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <p className="mt-1 text-[11px] text-slate-500">
+                  Add uploaded files or a written lesson. At least one content item is required.
+                </p>
+              </div>
 
               {/* Title & Instructor */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -674,7 +807,6 @@ export default function AdminCoursesPage() {
                   </label>
                   <input
                     type="text"
-                    required
                     value={courseForm.instructorName}
                     onChange={(e) =>
                       setCourseForm({ ...courseForm, instructorName: e.target.value })
@@ -831,8 +963,8 @@ export default function AdminCoursesPage() {
                     }
                     className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-slate-100 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   >
-                    <option value="PUBLISHED">Published (Visible on site & learning paths)</option>
-                    <option value="DRAFT">Save as Draft (Admin Only)</option>
+                    <option value="DRAFT">Save as Draft</option>
+                    <option value="PUBLISHED">Publish course</option>
                     <option value="ARCHIVED">Archived</option>
                   </select>
                 </div>

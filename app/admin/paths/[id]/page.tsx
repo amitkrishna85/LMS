@@ -472,7 +472,7 @@ export default function AdminPathDetailPage() {
                             ) : (
                               <span className="text-[9px] px-2 py-0.2 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20 font-medium flex items-center gap-1">
                                 <ExternalLink className="w-2.5 h-2.5" />
-                                <span>{course?.externalProvider || "Udemy"}</span>
+                                <span>{course?.externalProvider || "Learning Partner"}</span>
                               </span>
                             )}
                             {item.isRequired ? (

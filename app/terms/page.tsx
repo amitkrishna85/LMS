@@ -2,8 +2,8 @@ import { PublicNavbar } from "@/components/public/navbar";
 import { PublicFooter } from "@/components/public/footer";
 
 export const metadata = {
-  title: "Terms of Service | SkillPulse",
-  description: "Terms of service and usage conditions for SkillPulse Academy.",
+  title: "Terms of Service | Falkor Academy",
+  description: "Terms of service and usage conditions for Falkor Academy.",
 };
 
 export default function TermsPage() {
@@ -27,9 +27,9 @@ export default function TermsPage() {
           <section className="space-y-2">
             <h2 className="text-base font-bold text-slate-900">1. Acceptance of Terms</h2>
             <p>
-              By accessing and using SkillPulse, you acknowledge that you have read,
+              By accessing and using Falkor Academy, you acknowledge that you have read,
               understood, and agree to be bound by these terms. This platform is an
-              authorized internal and curated directory managed by organization
+              authorized internal learning environment managed by organizational
               administrators.
             </p>
           </section>
@@ -48,14 +48,13 @@ export default function TermsPage() {
 
           <section className="space-y-2">
             <h2 className="text-base font-bold text-slate-900">
-              3. External Provider Links
+              3. Learning Platform Links
             </h2>
             <p>
-              SkillPulse contains curated links directing users to third-party
-              educational websites (e.g., Udemy, Coursera). We make no warranties
-              concerning the availability, uptime, pricing, or terms of third-party
-              platforms. All enrollment, payment (if applicable), and account creation
-              on external platforms is governed by their respective terms.
+              Falkor Academy may surface internal or company-approved learning
+              resources. We do not guarantee availability or uptime for resources
+              hosted outside the platform, and any separate third-party terms apply
+              only where they are explicitly used as part of the learning program.
             </p>
           </section>
 
@@ -65,7 +64,7 @@ export default function TermsPage() {
             </h2>
             <p>
               All internal curriculum materials, video recordings, and code samples
-              are proprietary assets of SkillPulse and its instructors. Unauthorized
+              are proprietary assets of Falkor Academy and its instructors. Unauthorized
               reproduction or dissemination outside the platform is strictly prohibited.
             </p>
           </section>

@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import fs from "fs";
 import path from "path";
+import { BRAND_NAME, DEFAULT_TAGLINE, DEFAULT_FOOTER_TEXT, DEFAULT_SITE_COLOR } from "@/lib/brand";
 
 // Pre-hashed passwords for deterministic mock fallback
 // Password is "Admin123!" for admin, "Student123!" for students
@@ -12,7 +13,7 @@ export function getMockUsers() {
   return [
     {
       id: "usr_admin_1",
-      name: "Alex Vance (Admin)",
+      name: "Amit Krishna",
       email: "admin@skillpulse.local",
       passwordHash: ADMIN_HASH,
       role: "ADMIN" as const,
@@ -270,9 +271,9 @@ const INITIAL_MOCK_COURSES = [
     {
       id: "crs_ext_1",
       title: "The Complete 2026 Web Development Bootcamp",
-      slug: "complete-web-development-bootcamp-udemy",
+      slug: "complete-web-development-bootcamp",
       shortDescription: "Comprehensive external bootcamp covering web fundamentals, APIs, and modern toolchains.",
-      description: "A top-rated external deep dive on Udemy covering HTML5, CSS3, modern JavaScript, Node.js, Express, databases, and deployment.",
+      description: "A top-rated external deep dive covering HTML5, CSS3, modern JavaScript, Node.js, Express, databases, and deployment.",
       thumbnailUrl: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&auto=format&fit=crop&q=80",
       instructorName: "Dr. Angela Yu",
       level: "BEGINNER" as const,
@@ -281,8 +282,8 @@ const INITIAL_MOCK_COURSES = [
       tags: ["WebDev", "Bootcamp", "JavaScript", "NodeJS"],
       categoryId: "cat_swe",
       type: "EXTERNAL" as const,
-      externalUrl: "https://www.udemy.com/course/the-complete-web-development-bootcamp/",
-      externalProvider: "Udemy",
+      externalUrl: "https://example.com/course/web-development-bootcamp",
+      externalProvider: "Learning Partner",
       status: "PUBLISHED" as const,
       isFeatured: true,
       sortOrder: 4,
@@ -291,19 +292,19 @@ const INITIAL_MOCK_COURSES = [
     {
       id: "crs_ext_2",
       title: "Machine Learning Specialization by Andrew Ng",
-      slug: "machine-learning-specialization-coursera",
+      slug: "machine-learning-specialization",
       shortDescription: "Foundational machine learning algorithms, supervised learning, neural networks, and decision trees.",
-      description: "The gold-standard external curriculum from Stanford University and DeepLearning.AI on Coursera. Learn the mathematics, intuitive theory, and practical Python implementations.",
+      description: "A structured learning curriculum covering the mathematics, intuition, and practical implementations behind modern machine learning.",
       thumbnailUrl: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&auto=format&fit=crop&q=80",
       instructorName: "Andrew Ng",
       level: "INTERMEDIATE" as const,
       language: "English",
       durationMinutes: 4800,
-      tags: ["MachineLearning", "Python", "Math", "Coursera"],
+      tags: ["MachineLearning", "Python", "Math", "AI"],
       categoryId: "cat_ai",
       type: "EXTERNAL" as const,
-      externalUrl: "https://www.coursera.org/specializations/machine-learning-introduction",
-      externalProvider: "Coursera",
+      externalUrl: "https://example.com/course/machine-learning-specialization",
+      externalProvider: "Learning Partner",
       status: "PUBLISHED" as const,
       isFeatured: true,
       sortOrder: 5,
@@ -312,9 +313,9 @@ const INITIAL_MOCK_COURSES = [
     {
       id: "crs_ext_3",
       title: "Docker & Kubernetes: The Practical Guide",
-      slug: "docker-kubernetes-practical-guide-udemy",
+      slug: "docker-kubernetes-practical-guide",
       shortDescription: "Containerize applications, manage multi-container clusters, and automate cloud orchestration.",
-      description: "An intensive external guide on Udemy by Maximilian Schwarzmüller. Covers Docker containers, images, volumes, networks, and Kubernetes production deployments.",
+      description: "A practical guide covering Docker containers, images, volumes, networks, and Kubernetes production deployments.",
       thumbnailUrl: "https://images.unsplash.com/photo-1607799279861-4dd421887fb3?w=800&auto=format&fit=crop&q=80",
       instructorName: "Maximilian Schwarzmüller",
       level: "INTERMEDIATE" as const,
@@ -323,8 +324,8 @@ const INITIAL_MOCK_COURSES = [
       tags: ["Docker", "Kubernetes", "DevOps", "Containers"],
       categoryId: "cat_cloud",
       type: "EXTERNAL" as const,
-      externalUrl: "https://www.udemy.com/course/docker-kubernetes-the-practical-guide/",
-      externalProvider: "Udemy",
+      externalUrl: "https://example.com/course/docker-kubernetes-practical-guide",
+      externalProvider: "Learning Partner",
       status: "PUBLISHED" as const,
       isFeatured: false,
       sortOrder: 6,
@@ -333,7 +334,7 @@ const INITIAL_MOCK_COURSES = [
     {
       id: "crs_ext_4",
       title: "Figma UI/UX Design Essentials",
-      slug: "figma-ui-ux-design-essentials-udemy",
+      slug: "figma-ui-ux-design-essentials",
       shortDescription: "User interface and user experience design masterclass using Figma, auto-layout, and components.",
       description: "Learn to design modern web and mobile application interfaces in Figma with professional prototyping, responsive grids, and design handoff workflows.",
       thumbnailUrl: "https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?w=800&auto=format&fit=crop&q=80",
@@ -344,8 +345,8 @@ const INITIAL_MOCK_COURSES = [
       tags: ["Figma", "UIUX", "Prototyping", "Design"],
       categoryId: "cat_design",
       type: "EXTERNAL" as const,
-      externalUrl: "https://www.udemy.com/course/figma-ux-ui-design-essentials/",
-      externalProvider: "Udemy",
+      externalUrl: "https://example.com/course/figma-ui-ux-design-essentials",
+      externalProvider: "Learning Partner",
       status: "PUBLISHED" as const,
       isFeatured: false,
       sortOrder: 7,
@@ -515,7 +516,7 @@ const INITIAL_MOCK_PATHS = [
         },
         {
           id: "pi_1_3",
-          courseId: "crs_ext_3", // Docker & Kubernetes (External Udemy)
+          courseId: "crs_ext_3", // Docker & Kubernetes (External learning partner)
           order: 3,
           isRequired: true,
           note: "Step 3: Containerize and deploy your services into production clusters.",
@@ -535,7 +536,7 @@ const INITIAL_MOCK_PATHS = [
       items: [
         {
           id: "pi_2_1",
-          courseId: "crs_ext_2", // Machine Learning Specialization (External Coursera)
+          courseId: "crs_ext_2", // Machine Learning Specialization (External learning partner)
           order: 1,
           isRequired: true,
           note: "Step 1: Gain rigorous grounding in machine learning algorithms and theory.",
@@ -654,14 +655,14 @@ export function deleteMockLearningPathItem(pathId: string, itemId: string) {
 export function getMockSiteSettings() {
   return {
     id: "default",
-    siteName: "SkillPulse",
+    siteName: BRAND_NAME,
     logoUrl: null,
-    primaryColor: "#6366f1",
-    footerText: "© 2026 SkillPulse Learning Platform. All rights reserved.",
+    primaryColor: DEFAULT_SITE_COLOR,
+    tagline: DEFAULT_TAGLINE,
+    footerText: DEFAULT_FOOTER_TEXT,
     socialLinks: JSON.stringify({
       twitter: "https://twitter.com",
       github: "https://github.com",
-      linkedin: "https://linkedin.com",
     }),
   };
 }
@@ -673,8 +674,8 @@ export function getMockHomepageSections() {
       type: "HERO" as const,
       title: "Hero Banner",
       config: JSON.stringify({
-        headline: "Master In-Demand Skills with Curated Learning",
-        subheadline: "Accelerate your career through high-impact internal masterclasses and world-class external certifications in one unified platform.",
+        headline: "Falkor Academy",
+        subheadline: "Explore administrator-created courses with engaging videos, useful written lessons, and guided learning paths to help you build practical skills.",
         ctaText: "Explore Courses",
         ctaLink: "/courses",
         secondaryCtaText: "View Learning Paths",
@@ -688,7 +689,7 @@ export function getMockHomepageSections() {
       type: "FEATURED_PATHS" as const,
       title: "Curated Learning Paths",
       config: JSON.stringify({
-        subtitle: "Follow guided career tracks combining internal workshops and external credentials.",
+        subtitle: "Follow clear, structured learning paths built around practical video and written lessons.",
       }),
       order: 2,
       isVisible: true,
@@ -698,7 +699,7 @@ export function getMockHomepageSections() {
       type: "FEATURED_COURSES" as const,
       title: "Featured Courses",
       config: JSON.stringify({
-        subtitle: "Hand-picked courses from industry experts and leading online universities.",
+        subtitle: "Explore video courses and written lessons created and curated by Falkor Academy administrators.",
       }),
       order: 3,
       isVisible: true,

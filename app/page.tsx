@@ -6,7 +6,6 @@ import {
   getMockCourses,
   getMockLearningPaths,
   MOCK_CATEGORIES,
-  MOCK_HOMEPAGE_SECTIONS,
 } from "@/lib/mock-data";
 import { PublicNavbar } from "@/components/public/navbar";
 import { PublicFooter } from "@/components/public/footer";
@@ -19,11 +18,8 @@ import {
   BookOpen,
   Route,
   CheckCircle2,
-  Compass,
   PlayCircle,
-  ExternalLink,
   Award,
-  Layers,
   ChevronRight,
 } from "lucide-react";
 
@@ -32,17 +28,7 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const session = await getServerSession(authOptions);
 
-  // 1. Fetch Homepage Sections config
-  const rawSections = await safeDbQuery(
-    () =>
-      prisma.homepageSection.findMany({
-        where: { isVisible: true },
-        orderBy: { order: "asc" },
-      }),
-    MOCK_HOMEPAGE_SECTIONS
-  );
-
-  // 2. Fetch Categories
+  // 1. Fetch Categories
   const categories = await safeDbQuery(
     () =>
       prisma.category.findMany({
@@ -52,22 +38,25 @@ export default async function HomePage() {
     MOCK_CATEGORIES
   );
 
-  // 3. Fetch Featured Courses
+  // 2. Fetch Featured Courses
   const featuredCourses = await safeDbQuery(
     () =>
       prisma.course.findMany({
-        where: { status: "PUBLISHED", isFeatured: true },
+        where: { status: "PUBLISHED", isFeatured: true, type: "INTERNAL" },
         include: { category: true },
         take: 6,
         orderBy: { sortOrder: "asc" },
       }),
     (() => {
-      const pub = getMockCourses().filter((c: any) => c.status === "PUBLISHED" && c.isFeatured);
-      return (pub.length > 0 ? pub : getMockCourses().filter((c: any) => c.status === "PUBLISHED")).slice(0, 6);
+      const internalCourses = getMockCourses().filter(
+        (c: any) => c.status === "PUBLISHED" && c.type === "INTERNAL"
+      );
+      const featured = internalCourses.filter((c: any) => c.isFeatured);
+      return (featured.length > 0 ? featured : internalCourses).slice(0, 6);
     })()
   );
 
-  // 4. Fetch Featured Learning Paths
+  // 3. Fetch Featured Learning Paths
   const allMockPaths = getMockLearningPaths();
   const mockPublished = allMockPaths.filter((p: any) => p.status === "PUBLISHED");
   const fallbackPaths = mockPublished.length > 0 ? mockPublished : allMockPaths;
@@ -88,7 +77,7 @@ export default async function HomePage() {
     fallbackPaths
   );
 
-  // 5. If user is logged in, fetch "Continue Learning" strip data
+  // 4. If user is logged in, fetch "Continue Learning" strip data
   let continueLearningCourses: any[] = [];
   if (session?.user?.id) {
     const enrollments = await safeDbQuery(
@@ -105,34 +94,18 @@ export default async function HomePage() {
     if (enrollments.length > 0) {
       continueLearningCourses = enrollments.map((e: any) => ({
         ...e.course,
-        progressPercent: 45, // default indicator
+        progressPercent: 45,
       }));
     } else {
       // Show sample in-progress course from mocks
-      continueLearningCourses = getMockCourses().slice(0, 2).map((c: any, i: number) => ({
+      continueLearningCourses = getMockCourses()
+        .filter((course: any) => course.type === "INTERNAL")
+        .slice(0, 2)
+        .map((c: any, i: number) => ({
         ...c,
         progressPercent: i === 0 ? 60 : 30,
-      }));
+        }));
     }
-  }
-
-  // Parse hero config if available
-  const heroSection = rawSections.find((s: any) => s.type === "HERO");
-  let heroConfig: any = {
-    title: "Accelerate Your Engineering & Leadership Capabilities",
-    subtitle:
-      "SkillPulse brings internal masterclasses together with verified external credentials from Udemy, Coursera, and beyond.",
-    ctaText: "Explore Catalog",
-    ctaLink: "/courses",
-  };
-  if (heroSection?.config) {
-    try {
-      const parsed =
-        typeof heroSection.config === "string"
-          ? JSON.parse(heroSection.config)
-          : heroSection.config;
-      heroConfig = { ...heroConfig, ...parsed };
-    } catch (e) {}
   }
 
   return (
@@ -148,16 +121,15 @@ export default async function HomePage() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-semibold mb-6 shadow-inner">
             <Sparkles className="w-4 h-4 text-indigo-400" />
-            <span>Unified Internal Masterclasses & External Curated Links</span>
+            <span>Learning, made to help you grow</span>
           </div>
 
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white max-w-4xl mx-auto leading-tight sm:leading-tight">
-            {heroConfig.title || "Accelerate Your Engineering & Leadership Capabilities"}
+            Falkor Academy
           </h1>
 
           <p className="mt-6 text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed">
-            {heroConfig.subtitle ||
-              "SkillPulse connects internal video/text workshops alongside accredited external certifications in unified learning roadmaps."}
+            Explore administrator-created courses with engaging videos, useful written lessons, and guided learning paths to help you build practical skills.
           </p>
 
           {/* Quick Search in Hero */}
@@ -190,15 +162,15 @@ export default async function HomePage() {
           <div className="mt-12 flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-xs text-slate-400 font-medium">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>Admin-Curated Curriculum</span>
+              <span>Video and written courses</span>
             </div>
             <div className="flex items-center gap-2">
-              <ExternalLink className="w-4 h-4 text-sky-400" />
-              <span>External Udemy & Coursera Links</span>
+              <PlayCircle className="w-4 h-4 text-sky-400" />
+              <span>Learn at your own pace</span>
             </div>
             <div className="flex items-center gap-2">
               <Route className="w-4 h-4 text-purple-400" />
-              <span>Guided Learning Paths</span>
+              <span>Structured learning paths</span>
             </div>
             <div className="flex items-center gap-2">
               <Award className="w-4 h-4 text-amber-400" />
@@ -236,7 +208,7 @@ export default async function HomePage() {
                 >
                   <div className="min-w-0 flex-1">
                     <span className="text-[10px] font-bold text-indigo-600 uppercase">
-                      {course.type === "INTERNAL" ? "In Progress" : "External Track"}
+                      In Progress
                     </span>
                     <h3 className="text-sm font-bold text-slate-900 truncate">
                       {course.title}
@@ -347,29 +319,15 @@ export default async function HomePage() {
               <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
                 Featured Courses
               </h2>
-              <p className="mt-2 text-sm text-slate-600 max-w-xl">
-                Hand-picked internal masterclasses and leading external courses
-                recommended by engineering leaders.
-              </p>
-            </div>
+                <p className="mt-2 text-sm text-slate-600 max-w-xl">
+                  Explore video courses and written lessons created and curated by Falkor Academy administrators.
+                </p>
+              </div>
 
-            {/* Quick Filter toggle */}
-            <div className="flex items-center gap-2">
-              <Link
-                href="/courses?type=INTERNAL"
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors"
-              >
-                On Platform Only
-              </Link>
-              <Link
-                href="/courses?type=EXTERNAL"
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors"
-              >
-                External Courses
-              </Link>
-              <Link
-                href="/courses"
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/courses"
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
               >
                 Browse All
               </Link>
@@ -388,11 +346,10 @@ export default async function HomePage() {
       <section className="py-16 bg-slate-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            How SkillPulse Unifies Your Learning
+            Learning with Falkor Academy
           </h2>
           <p className="mt-3 text-sm text-slate-400 max-w-2xl mx-auto">
-            No more switching between scattered bookmarks. All team training,
-            internal lessons, and premier external courses in one place.
+            Learn through a mix of administrator-created videos and written lessons, follow structured paths, and track your progress in one place.
           </p>
 
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
@@ -401,11 +358,10 @@ export default async function HomePage() {
                 1
               </div>
               <h3 className="text-base font-bold text-white mb-2">
-                Internal Masterclasses
+                Video and Written Lessons
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Stream in-house HD video, read architectural blueprints, and download
-                PDF reference cards directly inside the built-in lesson player.
+                Watch focused videos and explore useful written content created and curated by Falkor Academy administrators.
               </p>
             </div>
 
@@ -414,11 +370,10 @@ export default async function HomePage() {
                 2
               </div>
               <h3 className="text-base font-bold text-white mb-2">
-                External Accredited Links
+                Structured Learning Paths
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Seamlessly launch courses on Udemy, Coursera, or edX in a secure
-                new tab, and self-report your status upon completion.
+                Follow a guided sequence of courses and build your knowledge one step at a time.
               </p>
             </div>
 
@@ -430,8 +385,7 @@ export default async function HomePage() {
                 Unified Learning Paths
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Follow admin-curated sequences combining both formats, complete with
-                composite progress bars and verifiable certificates.
+                Keep track of your learning, resume courses, and celebrate completed programs.
               </p>
             </div>
           </div>

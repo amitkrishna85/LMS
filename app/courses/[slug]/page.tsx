@@ -39,10 +39,10 @@ export async function generateMetadata({ params }: CoursePageProps) {
   }
 
   return {
-    title: `${course.title} | SkillPulse Academy`,
+    title: `${course.title} | Falkor Academy`,
     description: course.shortDescription,
     openGraph: {
-      title: `${course.title} | SkillPulse`,
+      title: `${course.title} | Falkor Academy`,
       description: course.shortDescription,
       type: "article",
     },
@@ -73,7 +73,7 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
     getMockCourses().find((c: any) => c.slug === slug)
   );
 
-  if (!course || course.status !== "PUBLISHED") {
+  if (!course || course.status !== "PUBLISHED" || course.type !== "INTERNAL") {
     notFound();
   }
 
@@ -143,9 +143,9 @@ export default async function CourseDetailPage({ params }: CoursePageProps) {
       "@type": "Organization",
       name:
         course.type === "INTERNAL"
-          ? "SkillPulse Academy"
+          ? "Falkor Academy"
           : course.externalProvider || "Partner Provider",
-      sameAs: course.externalUrl || "https://skillpulse.io",
+      sameAs: course.externalUrl || "https://falkor.academy",
     },
     educationalLevel: course.level,
     inLanguage: course.language || "en",
