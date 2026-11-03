@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession, unauthorizedResponse } from "@/lib/admin-auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
+import { addMockUser, getMockUsers } from "@/lib/mock-data";
 import bcrypt from "bcryptjs";
 import Papa from "papaparse";
 import { z } from "zod";
@@ -66,10 +67,12 @@ export async function POST(req: Request) {
       const normalizedEmail = email.toLowerCase().trim();
 
       // Check if user already exists
-      const existing = await safeDbQuery(
+      const existing =
+        (await safeDbQuery(
         () => prisma.user.findUnique({ where: { email: normalizedEmail } }),
         null
-      );
+        )) ||
+        getMockUsers().find((user) => user.email.toLowerCase() === normalizedEmail);
 
       if (existing) {
         errors.push({
@@ -108,6 +111,13 @@ export async function POST(req: Request) {
           role,
         }
       );
+      addMockUser({
+        ...created,
+        passwordHash,
+        isActive: true,
+        mustChangePassword: true,
+        createdAt: new Date().toISOString(),
+      });
 
       createdUsers.push({
         ...created,

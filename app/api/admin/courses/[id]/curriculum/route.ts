@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession, unauthorizedResponse } from "@/lib/admin-auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
+import { getMockCourses, updateMockCourse } from "@/lib/mock-data";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,15 @@ export async function POST(
           order: order || 0,
         }
       );
+      const course = getMockCourses().find((savedCourse) => savedCourse.id === courseId);
+      if (course) {
+        updateMockCourse(courseId, {
+          sections: [
+            ...(course.sections || []),
+            { ...section, lessons: (section as any).lessons || [] },
+          ],
+        });
+      }
       return NextResponse.json({ success: true, section });
     }
 
@@ -66,6 +76,13 @@ export async function POST(
           isPreview: Boolean(isPreview),
         }
       );
+      const course = getMockCourses().find((savedCourse) => savedCourse.id === courseId);
+      const sections = (course?.sections || []).map((section: any) =>
+        section.id === sectionId
+          ? { ...section, lessons: [...(section.lessons || []), lesson] }
+          : section
+      );
+      if (course) updateMockCourse(courseId, { sections });
       return NextResponse.json({ success: true, lesson });
     }
 
@@ -97,6 +114,14 @@ export async function PATCH(
           }),
         { id: itemId, ...data }
       );
+      const course = getMockCourses().find((savedCourse) => savedCourse.id === params.id);
+      if (course) {
+        updateMockCourse(params.id, {
+          sections: (course.sections || []).map((section: any) =>
+            section.id === itemId ? { ...section, ...data } : section
+          ),
+        });
+      }
       return NextResponse.json({ success: true, section: updated });
     }
 
@@ -109,6 +134,17 @@ export async function PATCH(
           }),
         { id: itemId, ...data }
       );
+      const course = getMockCourses().find((savedCourse) => savedCourse.id === params.id);
+      if (course) {
+        updateMockCourse(params.id, {
+          sections: (course.sections || []).map((section: any) => ({
+            ...section,
+            lessons: (section.lessons || []).map((lesson: any) =>
+              lesson.id === itemId ? { ...lesson, ...data } : lesson
+            ),
+          })),
+        });
+      }
       return NextResponse.json({ success: true, lesson: updated });
     }
 
@@ -141,6 +177,14 @@ export async function DELETE(
         () => prisma.section.delete({ where: { id: itemId } }),
         null
       );
+      const course = getMockCourses().find((savedCourse) => savedCourse.id === params.id);
+      if (course) {
+        updateMockCourse(params.id, {
+          sections: (course.sections || []).filter(
+            (section: any) => section.id !== itemId
+          ),
+        });
+      }
       return NextResponse.json({ success: true });
     }
 
@@ -149,6 +193,17 @@ export async function DELETE(
         () => prisma.lesson.delete({ where: { id: itemId } }),
         null
       );
+      const course = getMockCourses().find((savedCourse) => savedCourse.id === params.id);
+      if (course) {
+        updateMockCourse(params.id, {
+          sections: (course.sections || []).map((section: any) => ({
+            ...section,
+            lessons: (section.lessons || []).filter(
+              (lesson: any) => lesson.id !== itemId
+            ),
+          })),
+        });
+      }
       return NextResponse.json({ success: true });
     }
 

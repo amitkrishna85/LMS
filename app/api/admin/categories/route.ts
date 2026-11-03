@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getAdminSession, unauthorizedResponse } from "@/lib/admin-auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
-import { getMockCategories } from "@/lib/mock-data";
+import {
+  addMockCategory,
+  getMockCategories,
+  getMockCourses,
+} from "@/lib/mock-data";
 import { slugify } from "@/lib/utils";
 import { z } from "zod";
 
@@ -24,10 +28,16 @@ export async function GET() {
             _count: { select: { courses: true } },
           },
         }),
-      getMockCategories().map((c) => ({
-        ...c,
-        parent: null,
-        _count: { courses: 2 },
+      getMockCategories().map((category) => ({
+        ...category,
+        parent:
+          getMockCategories().find((parent) => parent.id === category.parentId) ||
+          null,
+        _count: {
+          courses: getMockCourses().filter(
+            (course: any) => course.categoryId === category.id
+          ).length,
+        },
       }))
     );
 
@@ -66,7 +76,10 @@ export async function POST(req: Request) {
       null
     );
 
-    if (existing) {
+    const localSlugExists =
+      !process.env.DATABASE_URL &&
+      getMockCategories().some((category) => category.slug === finalSlug);
+    if (existing || localSlugExists) {
       finalSlug = `${baseSlug}-${Date.now().toString().slice(-4)}`;
     }
 
@@ -86,6 +99,7 @@ export async function POST(req: Request) {
         parentId: parentId || null,
       }
     );
+    addMockCategory(category);
 
     return NextResponse.json({ success: true, category });
   } catch (error) {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
+import { getMockUsers, updateMockUser } from "@/lib/mock-data";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
@@ -39,8 +40,8 @@ export async function POST(req: Request) {
 
     const user = await safeDbQuery(
       () => prisma.user.findUnique({ where: { email: userEmail } }),
-      null
-    );
+      getMockUsers().find((mockUser) => mockUser.email.toLowerCase() === userEmail) || null
+    ) || getMockUsers().find((mockUser) => mockUser.email.toLowerCase() === userEmail) || null;
 
     if (user) {
       const match = await bcrypt.compare(currentPassword, user.passwordHash);
@@ -53,12 +54,20 @@ export async function POST(req: Request) {
 
       const newHash = await bcrypt.hash(newPassword, 10);
 
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          passwordHash: newHash,
-          mustChangePassword: false,
-        },
+      await safeDbQuery(
+        () =>
+          prisma.user.update({
+            where: { id: user.id },
+            data: {
+              passwordHash: newHash,
+              mustChangePassword: false,
+            },
+          }),
+        null
+      );
+      updateMockUser(user.id, {
+        passwordHash: newHash,
+        mustChangePassword: false,
       });
 
       // Audit Log

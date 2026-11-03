@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
+import {
+  getMockCourses,
+  upsertMockEnrollment,
+  upsertMockExternalProgress,
+} from "@/lib/mock-data";
 
 export const dynamic = "force-dynamic";
 
@@ -23,8 +28,8 @@ export async function POST(
 
     const course = await safeDbQuery(
       () => prisma.course.findUnique({ where: { slug } }),
-      null
-    );
+      getMockCourses().find((item: any) => item.slug === slug) || null
+    ) || getMockCourses().find((item: any) => item.slug === slug) || null;
 
     if (!course) {
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
@@ -49,6 +54,13 @@ export async function POST(
           }),
         { id: "mock_enr_" + Date.now(), userId, courseId: course.id, status: "ENROLLED" }
       );
+      const savedEnrollment = upsertMockEnrollment({
+        ...enrollment,
+        userId,
+        courseId: course.id,
+        status: enrollment.status || "ENROLLED",
+        lastOpenedAt: new Date().toISOString(),
+      });
 
       // Audit Log
       await safeDbQuery(
@@ -65,7 +77,10 @@ export async function POST(
         null
       );
 
-      return NextResponse.json({ success: true, enrollment });
+      return NextResponse.json({
+        success: true,
+        enrollment: process.env.DATABASE_URL ? enrollment : savedEnrollment,
+      });
     } else {
       // External course: mark as in progress
       const progress = await safeDbQuery(
@@ -86,8 +101,17 @@ export async function POST(
           }),
         { id: "mock_ext_" + Date.now(), userId, courseId: course.id, status: "IN_PROGRESS" }
       );
+      const savedProgress = upsertMockExternalProgress({
+        ...progress,
+        userId,
+        courseId: course.id,
+        status: progress.status || "IN_PROGRESS",
+      });
 
-      return NextResponse.json({ success: true, progress });
+      return NextResponse.json({
+        success: true,
+        progress: process.env.DATABASE_URL ? progress : savedProgress,
+      });
     }
   } catch (error) {
     console.error("Enrollment error:", error);

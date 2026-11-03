@@ -23,6 +23,17 @@ export async function safeDbQuery<T>(
     return await queryFn();
   } catch (error) {
     console.warn("safeDbQuery caught error (likely build without live DB):", error);
+    if (process.env.DATABASE_URL) {
+      throw error;
+    }
+    if (
+      process.env.NODE_ENV === "production" &&
+      process.env.NEXT_PHASE !== "phase-production-build"
+    ) {
+      throw new Error(
+        "DATABASE_URL must be configured in production to persist application data."
+      );
+    }
     return fallbackValue;
   }
 }

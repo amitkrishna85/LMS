@@ -77,6 +77,9 @@ cp .env.example .env
 | `OPENAI_API_KEY` | Optional API key for AI-assisted course draft generation |
 | `OPENAI_MODEL` | Optional chat-completions model name (defaults to `gpt-4o-mini`) |
 
+### Data Persistence
+With `DATABASE_URL` configured, application records are saved to PostgreSQL. In local development without a database URL, the app persists courses, lessons, categories, users, learning paths, enrollments, progress, homepage sections, and site settings to the ignored `data/mock-db.json` file. Keep this file local; it contains private account and learning data. The local-file fallback is not suitable for production or serverless deployments, which must configure a reachable PostgreSQL database. Database connection errors are surfaced instead of reporting a mock save as successful.
+
 ### AI-Assisted Course Creation
 Administrators can use **Create with AI** to draft course details, outcomes, tags, and a written lesson from a course brief, or create courses manually. Course lessons can include videos, PowerPoint, Word, PDF, spreadsheet, audio, image, and text uploads, as well as written lessons. Uploaded files are attached as lessons but are not analyzed by AI. Configure `OPENAI_API_KEY` to enable draft generation. Course briefs are sent to the configured AI provider, so do not include confidential information.
 

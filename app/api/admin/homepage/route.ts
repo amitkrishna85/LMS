@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { getAdminSession, unauthorizedResponse } from "@/lib/admin-auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
-import { getMockHomepageSections } from "@/lib/mock-data";
+import {
+  getMockHomepageSections,
+  updateMockHomepageSection,
+} from "@/lib/mock-data";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +48,7 @@ export async function PATCH(req: Request) {
         }),
       { id: sectionId, ...updateData }
     );
+    const savedSection = updateMockHomepageSection(sectionId, updateData) || updated;
 
     // Audit Log
     await safeDbQuery(
@@ -61,7 +65,7 @@ export async function PATCH(req: Request) {
       null
     );
 
-    return NextResponse.json({ success: true, section: updated });
+    return NextResponse.json({ success: true, section: savedSection });
   } catch (error) {
     console.error("Update homepage section error:", error);
     return NextResponse.json(

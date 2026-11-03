@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
+import {
+  getMockCourses,
+  getMockLearningPaths,
+  upsertMockEnrollment,
+  upsertMockPathEnrollment,
+} from "@/lib/mock-data";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +40,22 @@ export async function POST(
             },
           },
         }),
-      null
+      getMockLearningPaths().find((item: any) => item.slug === slug)
+        ? (() => {
+            const savedPath = getMockLearningPaths().find(
+              (item: any) => item.slug === slug
+            )!;
+            return {
+              ...savedPath,
+              items: (savedPath.items || []).map((item: any) => ({
+                ...item,
+                course:
+                  item.course ||
+                  getMockCourses().find((course: any) => course.id === item.courseId),
+              })),
+            };
+          })()
+        : null
     );
 
     if (!path) {
@@ -68,12 +89,13 @@ export async function POST(
         startedAt: new Date(),
       }
     );
+    const savedPathEnrollment = upsertMockPathEnrollment(pathEnrollment);
 
     // Optionally auto-enroll in internal courses
     if (path.items && path.items.length > 0) {
       for (const item of path.items) {
         if (item.course && item.course.type === "INTERNAL") {
-          await safeDbQuery(
+          const enrollment = await safeDbQuery(
             () =>
               prisma.enrollment.upsert({
                 where: {
@@ -91,6 +113,12 @@ export async function POST(
               }),
             null
           );
+          upsertMockEnrollment({
+            ...enrollment,
+            userId,
+            courseId: item.course.id,
+            status: enrollment?.status || "ENROLLED",
+          });
         }
       }
     }
@@ -113,7 +141,8 @@ export async function POST(
     return NextResponse.json({
       success: true,
       message: `Successfully enrolled in ${path.title}`,
-      pathEnrollment,
+      pathEnrollment:
+        process.env.DATABASE_URL ? pathEnrollment : savedPathEnrollment,
     });
   } catch (error) {
     console.error("Path enrollment error:", error);

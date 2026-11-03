@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { getAdminSession, unauthorizedResponse } from "@/lib/admin-auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
-import { getMockSiteSettings } from "@/lib/mock-data";
+import {
+  getMockSiteSettings,
+  updateMockSiteSettings,
+} from "@/lib/mock-data";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +38,7 @@ export async function POST(req: Request) {
         }),
       { id: "default", ...body }
     );
+    const savedSettings = updateMockSiteSettings(body);
 
     // Audit Log
     await safeDbQuery(
@@ -51,7 +55,10 @@ export async function POST(req: Request) {
       null
     );
 
-    return NextResponse.json({ success: true, settings: updated });
+    return NextResponse.json({
+      success: true,
+      settings: process.env.DATABASE_URL ? updated : savedSettings,
+    });
   } catch (error) {
     console.error("Update settings error:", error);
     return NextResponse.json({ error: "Failed to save settings" }, { status: 500 });

@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
-import { getMockCourses } from "@/lib/mock-data";
+import {
+  getMockCategories,
+  getMockCourses,
+  getMockEnrollments,
+  getMockExternalProgress,
+  getMockLessonProgress,
+} from "@/lib/mock-data";
 
 export const dynamic = "force-dynamic";
 
@@ -46,7 +52,22 @@ export async function GET(
             },
           },
         }),
-      getMockCourses().find((c) => c.slug === slug) || null
+      (() => {
+        const savedCourse = getMockCourses().find((c) => c.slug === slug);
+        if (!savedCourse) return null;
+        return {
+          ...savedCourse,
+          category:
+            getMockCategories().find(
+              (category: any) => category.id === savedCourse.categoryId
+            ) || null,
+          _count: {
+            enrollments: getMockEnrollments().filter(
+              (item: any) => item.courseId === savedCourse.id
+            ).length,
+          },
+        };
+      })()
     );
 
     if (!course) {
@@ -70,7 +91,9 @@ export async function GET(
                 },
               },
             }),
-          null
+          getMockEnrollments(userId).find(
+            (item: any) => item.courseId === course.id
+          ) || null
         );
 
         const progressRecords = await safeDbQuery(
@@ -83,7 +106,13 @@ export async function GET(
               },
               select: { lessonId: true },
             }),
-          []
+          getMockLessonProgress(userId).filter(
+            (item: any) =>
+              item.completed &&
+              course.sections?.some((section: any) =>
+                section.lessons?.some((lesson: any) => lesson.id === item.lessonId)
+              )
+          )
         );
         completedLessonIds = progressRecords.map((p: any) => p.lessonId);
       } else {
@@ -98,7 +127,9 @@ export async function GET(
                 },
               },
             }),
-          null
+          getMockExternalProgress(userId).find(
+            (item: any) => item.courseId === course.id
+          ) || null
         );
       }
     }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession, unauthorizedResponse } from "@/lib/admin-auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
+import { upsertMockEnrollment, upsertMockPathEnrollment } from "@/lib/mock-data";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +32,7 @@ export async function POST(req: Request) {
 
     if (targetType === "COURSE") {
       for (const userId of userIds) {
-        await safeDbQuery(
+        const enrollment = await safeDbQuery(
           () =>
             prisma.enrollment.upsert({
               where: {
@@ -49,11 +50,17 @@ export async function POST(req: Request) {
             }),
           null
         );
+        upsertMockEnrollment({
+          ...enrollment,
+          userId,
+          courseId: targetId,
+          status: enrollment?.status || "ENROLLED",
+        });
         enrolledCount++;
       }
     } else {
       for (const userId of userIds) {
-        await safeDbQuery(
+        const pathEnrollment = await safeDbQuery(
           () =>
             prisma.pathEnrollment.upsert({
               where: {
@@ -70,6 +77,11 @@ export async function POST(req: Request) {
             }),
           null
         );
+        upsertMockPathEnrollment({
+          ...pathEnrollment,
+          userId,
+          pathId: targetId,
+        });
         enrolledCount++;
       }
     }

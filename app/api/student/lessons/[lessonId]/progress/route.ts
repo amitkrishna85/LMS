@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
+import {
+  getMockCourses,
+  getMockLessonProgress,
+  upsertMockEnrollment,
+  upsertMockLessonProgress,
+} from "@/lib/mock-data";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +30,17 @@ export async function POST(
     const completed = body.completed !== false; // default true
 
     // 1. Find lesson and section/course
+    const mockCourse = getMockCourses().find((course: any) =>
+      (course.sections || []).some((section: any) =>
+        (section.lessons || []).some((item: any) => item.id === lessonId)
+      )
+    );
+    const mockSection = mockCourse?.sections?.find((section: any) =>
+      (section.lessons || []).some((item: any) => item.id === lessonId)
+    );
+    const mockLesson = mockSection?.lessons?.find(
+      (item: any) => item.id === lessonId
+    );
     const lesson = await safeDbQuery(
       () =>
         prisma.lesson.findUnique({
@@ -44,8 +61,27 @@ export async function POST(
             },
           },
         }),
-      null
-    );
+      mockLesson
+        ? {
+            ...mockLesson,
+            section: {
+              ...mockSection,
+              course: {
+                ...mockCourse,
+                sections: mockCourse.sections,
+              },
+            },
+          }
+        : null
+    ) || (mockLesson
+      ? {
+          ...mockLesson,
+          section: {
+            ...mockSection,
+            course: { ...mockCourse, sections: mockCourse.sections },
+          },
+        }
+      : null);
 
     // 2. Upsert LessonProgress
     const progress = await safeDbQuery(
@@ -70,6 +106,13 @@ export async function POST(
         }),
       { userId, lessonId, completed, completedAt: new Date() }
     );
+    const savedProgress = upsertMockLessonProgress({
+      ...progress,
+      userId,
+      lessonId,
+      completed,
+      completedAt: completed ? new Date().toISOString() : null,
+    });
 
     let courseCompleted = false;
     let percent = 0;
@@ -90,7 +133,10 @@ export async function POST(
               lessonId: { in: allLessons.map((l: any) => l.id) },
             },
           }),
-        []
+        getMockLessonProgress(userId).filter(
+          (item: any) =>
+            item.completed && allLessons.some((lesson: any) => lesson.id === item.lessonId)
+        )
       );
 
       const completedCount = allCompleted.length;
@@ -100,7 +146,7 @@ export async function POST(
       courseCompleted = percent === 100;
 
       // Update enrollment status
-      await safeDbQuery(
+      const enrollment = await safeDbQuery(
         () =>
           prisma.enrollment.upsert({
             where: {
@@ -124,11 +170,19 @@ export async function POST(
           }),
         null
       );
+      upsertMockEnrollment({
+        ...enrollment,
+        userId,
+        courseId: course.id,
+        status: courseCompleted ? "COMPLETED" : "IN_PROGRESS",
+        completedAt: courseCompleted ? new Date().toISOString() : null,
+        lastOpenedAt: new Date().toISOString(),
+      });
     }
 
     return NextResponse.json({
       success: true,
-      progress,
+      progress: process.env.DATABASE_URL ? progress : savedProgress,
       courseCompleted,
       percent,
     });

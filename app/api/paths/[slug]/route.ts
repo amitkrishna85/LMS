@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
-import { getMockLearningPaths } from "@/lib/mock-data";
+import {
+  getMockCourses,
+  getMockExternalProgress,
+  getMockLearningPaths,
+  getMockLessonProgress,
+  getMockPathEnrollments,
+} from "@/lib/mock-data";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +43,19 @@ export async function GET(
             },
           },
         }),
-      getMockLearningPaths().find((p) => p.slug === slug) || null
+      (() => {
+        const savedPath = getMockLearningPaths().find((p) => p.slug === slug);
+        if (!savedPath) return null;
+        return {
+          ...savedPath,
+          items: (savedPath.items || []).map((item: any) => ({
+            ...item,
+            course:
+              item.course ||
+              getMockCourses().find((course: any) => course.id === item.courseId),
+          })),
+        };
+      })()
     );
 
     if (!path) {
@@ -59,7 +77,9 @@ export async function GET(
               },
             },
           }),
-        null
+        getMockPathEnrollments(userId).find(
+          (item: any) => item.pathId === path.id
+        ) || null
       );
       isEnrolled = !!enrollment;
 
@@ -70,7 +90,15 @@ export async function GET(
         if (c.type === "INTERNAL") {
           const totalLessons = c.sections.reduce(
             (acc: number, s: any) => acc + s.lessons.length,
-            0
+            getMockLessonProgress(userId).filter(
+              (progress: any) =>
+                progress.completed &&
+                c.sections?.some((section: any) =>
+                  section.lessons?.some(
+                    (lesson: any) => lesson.id === progress.lessonId
+                  )
+                )
+            ).length
           );
 
           if (totalLessons > 0) {
@@ -101,7 +129,9 @@ export async function GET(
                   },
                 },
               }),
-            null
+            getMockExternalProgress(userId).find(
+              (progress: any) => progress.courseId === c.id
+            ) || null
           );
           if (extProg?.status === "COMPLETED") {
             isStepCompleted = true;

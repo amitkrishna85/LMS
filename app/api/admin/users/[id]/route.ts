@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession, unauthorizedResponse } from "@/lib/admin-auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
+import { deleteMockUser, updateMockUser } from "@/lib/mock-data";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -56,6 +57,7 @@ export async function PATCH(
         updatedAt: new Date(),
       }
     );
+    const savedUser = updateMockUser(id, result.data) || updatedUser;
 
     // Audit Log
     await safeDbQuery(
@@ -72,7 +74,8 @@ export async function PATCH(
       null
     );
 
-    return NextResponse.json({ success: true, user: updatedUser });
+    const { passwordHash: _passwordHash, ...publicUser } = savedUser;
+    return NextResponse.json({ success: true, user: publicUser });
   } catch (error) {
     console.error("Update user error:", error);
     return NextResponse.json({ error: "Failed to update user" }, { status: 500 });
@@ -101,6 +104,7 @@ export async function DELETE(
       () => prisma.user.delete({ where: { id } }),
       null
     );
+    deleteMockUser(id);
 
     // Audit Log
     await safeDbQuery(

@@ -2,7 +2,15 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
-import { getMockCourses, getMockLearningPaths } from "@/lib/mock-data";
+import {
+  getMockCategories,
+  getMockCourses,
+  getMockEnrollments,
+  getMockExternalProgress,
+  getMockLearningPaths,
+  getMockLessonProgress,
+  getMockPathEnrollments,
+} from "@/lib/mock-data";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +47,29 @@ export async function GET(req: Request) {
           },
           orderBy: { lastOpenedAt: "desc" },
         }),
-      []
+      getMockEnrollments(userId).flatMap((enrollment: any) => {
+        const course = getMockCourses().find(
+          (item: any) => item.id === enrollment.courseId
+        );
+        if (!course) return [];
+        return [{
+          ...enrollment,
+          course: {
+            ...course,
+            category: getMockCategories().find(
+              (category: any) => category.id === course.categoryId
+            ) || null,
+            sections: (course.sections || []).map((section: any) => ({
+              ...section,
+              lessons: (section.lessons || []).map((lesson: any) => ({
+                id: lesson.id,
+                title: lesson.title,
+                durationMinutes: lesson.durationMinutes,
+              })),
+            })),
+          },
+        }];
+      })
     );
 
     // Fetch user's completed lesson IDs
@@ -49,7 +79,7 @@ export async function GET(req: Request) {
           where: { userId, completed: true },
           select: { lessonId: true },
         }),
-      []
+      getMockLessonProgress(userId).filter((progress: any) => progress.completed)
     );
     const completedLessonIds = new Set(
       userLessonProgress.map((p: any) => p.lessonId)
@@ -128,7 +158,21 @@ export async function GET(req: Request) {
           },
           orderBy: { markedAt: "desc" },
         }),
-      []
+      getMockExternalProgress(userId).flatMap((progress: any) => {
+        const course = getMockCourses().find(
+          (item: any) => item.id === progress.courseId
+        );
+        if (!course) return [];
+        return [{
+          ...progress,
+          course: {
+            ...course,
+            category: getMockCategories().find(
+              (category: any) => category.id === course.categoryId
+            ) || null,
+          },
+        }];
+      })
     );
 
     let externalCourses: any[] = [];
@@ -189,7 +233,24 @@ export async function GET(req: Request) {
           },
           orderBy: { startedAt: "desc" },
         }),
-      []
+      getMockPathEnrollments(userId).flatMap((enrollment: any) => {
+        const path = getMockLearningPaths().find(
+          (item: any) => item.id === enrollment.pathId
+        );
+        if (!path) return [];
+        return [{
+          ...enrollment,
+          path: {
+            ...path,
+            items: (path.items || []).map((pathItem: any) => ({
+              ...pathItem,
+              course: getMockCourses().find(
+                (course: any) => course.id === pathItem.courseId
+              ) || null,
+            })),
+          },
+        }];
+      })
     );
 
     let enrolledPaths: any[] = [];

@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
+import {
+  getMockCourses,
+  upsertMockExternalProgress,
+} from "@/lib/mock-data";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -34,8 +38,8 @@ export async function POST(
 
     const course = await safeDbQuery(
       () => prisma.course.findUnique({ where: { slug } }),
-      null
-    );
+      getMockCourses().find((item: any) => item.slug === slug) || null
+    ) || getMockCourses().find((item: any) => item.slug === slug) || null;
 
     if (!course) {
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
@@ -84,8 +88,18 @@ export async function POST(
           }),
         { userId, courseId: course.id, status }
       );
+      const savedProgress = upsertMockExternalProgress({
+        ...progress,
+        userId,
+        courseId: course.id,
+        status,
+        markedAt: new Date().toISOString(),
+      });
 
-      return NextResponse.json({ success: true, progress });
+      return NextResponse.json({
+        success: true,
+        progress: process.env.DATABASE_URL ? progress : savedProgress,
+      });
     }
 
     return NextResponse.json({ success: true, message: "Outbound click tracked" });

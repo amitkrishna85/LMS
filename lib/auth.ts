@@ -55,11 +55,10 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Your account has been deactivated. Please contact an administrator.");
         }
 
-        const passwordMatch =
-          (await bcrypt.compare(credentials.password, user.passwordHash)) ||
-          (user.email === "admin@skillpulse.local" && credentials.password === "Admin123!") ||
-          (user.email.endsWith("@skillpulse.local") &&
-            (credentials.password === "Student123!" || credentials.password === "Welcome123!"));
+        const passwordMatch = await bcrypt.compare(
+          credentials.password,
+          user.passwordHash
+        );
 
         if (!passwordMatch) {
           throw new Error("Invalid email or password");

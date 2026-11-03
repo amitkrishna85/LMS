@@ -3,9 +3,9 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
 import {
+  getMockCategories,
   getMockCourses,
   getMockLearningPaths,
-  MOCK_CATEGORIES,
 } from "@/lib/mock-data";
 import { PublicNavbar } from "@/components/public/navbar";
 import { PublicFooter } from "@/components/public/footer";
@@ -35,7 +35,7 @@ export default async function HomePage() {
         take: 8,
         orderBy: { name: "asc" },
       }),
-    MOCK_CATEGORIES
+    getMockCategories()
   );
 
   // 2. Fetch Featured Courses

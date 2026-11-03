@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { getAdminSession, unauthorizedResponse } from "@/lib/admin-auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
+import {
+  addMockPasswordResetToken,
+  getMockUsers,
+  updateMockUser,
+} from "@/lib/mock-data";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
@@ -18,8 +23,8 @@ export async function POST(
 
     const user = await safeDbQuery(
       () => prisma.user.findUnique({ where: { id } }),
-      null
-    );
+      getMockUsers().find((mockUser) => mockUser.id === id) || null
+    ) || getMockUsers().find((mockUser) => mockUser.id === id) || null;
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -53,6 +58,13 @@ export async function POST(
       },
       null
     );
+    addMockPasswordResetToken({
+      id: `mock_reset_${Date.now()}`,
+      userId: id,
+      token,
+      expiresAt: expiresAt.toISOString(),
+    });
+    updateMockUser(id, { passwordHash: newHash, mustChangePassword: true });
 
     const resetLink = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/auth/reset-password?token=${token}`;
 

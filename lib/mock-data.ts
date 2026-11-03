@@ -9,7 +9,7 @@ const ADMIN_HASH = bcrypt.hashSync("Admin123!", 10);
 const STUDENT_HASH = bcrypt.hashSync("Student123!", 10);
 const NEW_STUDENT_HASH = bcrypt.hashSync("Welcome123!", 10);
 
-export function getMockUsers() {
+function getInitialMockUsers() {
   return [
     {
       id: "usr_admin_1",
@@ -54,7 +54,7 @@ export function getMockUsers() {
   ];
 }
 
-export function getMockCategories() {
+function getInitialMockCategories() {
   return [
     {
       id: "cat_swe",
@@ -380,70 +380,351 @@ const DB_FILE = path.join(process.cwd(), "data", "mock-db.json");
 const globalForMock = globalThis as unknown as {
   __MOCK_COURSES__?: any[];
   __MOCK_PATHS__?: any[];
+  __MOCK_USERS__?: any[];
+  __MOCK_CATEGORIES__?: any[];
+  __MOCK_SITE_SETTINGS__?: any;
+  __MOCK_HOMEPAGE_SECTIONS__?: any[];
+  __MOCK_ENROLLMENTS__?: any[];
+  __MOCK_PATH_ENROLLMENTS__?: any[];
+  __MOCK_LESSON_PROGRESS__?: any[];
+  __MOCK_EXTERNAL_PROGRESS__?: any[];
+  __MOCK_PASSWORD_RESET_TOKENS__?: any[];
 };
 
 function ensureMockDbInitialized() {
-  if (globalForMock.__MOCK_COURSES__ && globalForMock.__MOCK_PATHS__) {
+  if (
+    globalForMock.__MOCK_COURSES__ !== undefined &&
+    globalForMock.__MOCK_PATHS__ !== undefined &&
+    globalForMock.__MOCK_USERS__ !== undefined &&
+    globalForMock.__MOCK_CATEGORIES__ !== undefined &&
+    globalForMock.__MOCK_SITE_SETTINGS__ !== undefined &&
+    globalForMock.__MOCK_HOMEPAGE_SECTIONS__ !== undefined &&
+    globalForMock.__MOCK_ENROLLMENTS__ !== undefined &&
+    globalForMock.__MOCK_PATH_ENROLLMENTS__ !== undefined &&
+    globalForMock.__MOCK_LESSON_PROGRESS__ !== undefined &&
+    globalForMock.__MOCK_EXTERNAL_PROGRESS__ !== undefined &&
+    globalForMock.__MOCK_PASSWORD_RESET_TOKENS__ !== undefined
+  ) {
     return;
   }
 
-  // 1. Try reading existing JSON from disk
-  try {
-    if (fs.existsSync(DB_FILE)) {
-      const content = fs.readFileSync(DB_FILE, "utf-8");
-      const data = JSON.parse(content);
-      if (Array.isArray(data.courses) && data.courses.length > 0) {
-        globalForMock.__MOCK_COURSES__ = data.courses;
-      }
-      if (Array.isArray(data.paths) && data.paths.length > 0) {
-        globalForMock.__MOCK_PATHS__ = data.paths;
-      }
+  let savedData: any = {};
+  if (fs.existsSync(DB_FILE)) {
+    try {
+      savedData = JSON.parse(fs.readFileSync(DB_FILE, "utf-8"));
+    } catch (error) {
+      console.error("Failed to read persistent mock data:", error);
+      throw new Error("Saved application data could not be loaded.");
     }
-  } catch (err) {
-    console.warn("Failed to read mock-db.json:", err);
   }
 
-  // 2. Initialize with default mock constants if not loaded
-  if (!globalForMock.__MOCK_COURSES__) {
-    globalForMock.__MOCK_COURSES__ = INITIAL_MOCK_COURSES.map((c: any, i: number) => ({
+  if (globalForMock.__MOCK_COURSES__ === undefined) {
+    globalForMock.__MOCK_COURSES__ = Array.isArray(savedData.courses)
+      ? savedData.courses
+      : INITIAL_MOCK_COURSES.map((c: any, i: number) => ({
       ...c,
       createdAt: c.createdAt || new Date(Date.now() - (100 - i) * 86400000).toISOString(),
       updatedAt: c.updatedAt || new Date(Date.now() - (100 - i) * 86400000).toISOString(),
-    }));
+      }));
   }
 
-  if (!globalForMock.__MOCK_PATHS__) {
-    globalForMock.__MOCK_PATHS__ = INITIAL_MOCK_PATHS.map((p: any, i: number) => ({
+  if (globalForMock.__MOCK_PATHS__ === undefined) {
+    globalForMock.__MOCK_PATHS__ = Array.isArray(savedData.paths)
+      ? savedData.paths
+      : INITIAL_MOCK_PATHS.map((p: any, i: number) => ({
       ...p,
       createdAt: p.createdAt || new Date(Date.now() - (50 - i) * 86400000).toISOString(),
       updatedAt: p.updatedAt || new Date(Date.now() - (50 - i) * 86400000).toISOString(),
-    }));
+      }));
   }
+
+  globalForMock.__MOCK_USERS__ ??=
+    Array.isArray(savedData.users) ? savedData.users : getInitialMockUsers();
+  globalForMock.__MOCK_CATEGORIES__ ??=
+    Array.isArray(savedData.categories)
+      ? savedData.categories
+      : getInitialMockCategories();
+  globalForMock.__MOCK_SITE_SETTINGS__ ??=
+    savedData.siteSettings || getDefaultMockSiteSettings();
+  globalForMock.__MOCK_HOMEPAGE_SECTIONS__ ??=
+    Array.isArray(savedData.homepageSections)
+      ? savedData.homepageSections
+      : getDefaultMockHomepageSections();
+  globalForMock.__MOCK_ENROLLMENTS__ ??= Array.isArray(savedData.enrollments)
+    ? savedData.enrollments
+    : [];
+  globalForMock.__MOCK_PATH_ENROLLMENTS__ ??=
+    Array.isArray(savedData.pathEnrollments) ? savedData.pathEnrollments : [];
+  globalForMock.__MOCK_LESSON_PROGRESS__ ??=
+    Array.isArray(savedData.lessonProgress) ? savedData.lessonProgress : [];
+  globalForMock.__MOCK_EXTERNAL_PROGRESS__ ??=
+    Array.isArray(savedData.externalProgress) ? savedData.externalProgress : [];
+  globalForMock.__MOCK_PASSWORD_RESET_TOKENS__ ??=
+    Array.isArray(savedData.passwordResetTokens)
+      ? savedData.passwordResetTokens
+      : [];
 
   persistMockDb();
 }
 
 function persistMockDb() {
-  try {
-    const dir = path.dirname(DB_FILE);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(
-      DB_FILE,
-      JSON.stringify(
-        {
-          courses: globalForMock.__MOCK_COURSES__ || [],
-          paths: globalForMock.__MOCK_PATHS__ || [],
-        },
-        null,
-        2
-      ),
-      "utf-8"
-    );
-  } catch (err) {
-    console.warn("Failed to write mock-db.json:", err);
+  if (
+    process.env.DATABASE_URL ||
+    process.env.NEXT_PHASE === "phase-production-build"
+  ) {
+    return;
   }
+
+  const dir = path.dirname(DB_FILE);
+  fs.mkdirSync(dir, { recursive: true });
+  const temporaryFile = `${DB_FILE}.${process.pid}.tmp`;
+  fs.writeFileSync(
+    temporaryFile,
+    JSON.stringify(
+      {
+        courses: globalForMock.__MOCK_COURSES__ || [],
+        paths: globalForMock.__MOCK_PATHS__ || [],
+        users: globalForMock.__MOCK_USERS__ || [],
+        categories: globalForMock.__MOCK_CATEGORIES__ || [],
+        siteSettings: globalForMock.__MOCK_SITE_SETTINGS__ || getDefaultMockSiteSettings(),
+        homepageSections:
+          globalForMock.__MOCK_HOMEPAGE_SECTIONS__ || getDefaultMockHomepageSections(),
+        enrollments: globalForMock.__MOCK_ENROLLMENTS__ || [],
+        pathEnrollments: globalForMock.__MOCK_PATH_ENROLLMENTS__ || [],
+        lessonProgress: globalForMock.__MOCK_LESSON_PROGRESS__ || [],
+        externalProgress: globalForMock.__MOCK_EXTERNAL_PROGRESS__ || [],
+        passwordResetTokens: globalForMock.__MOCK_PASSWORD_RESET_TOKENS__ || [],
+      },
+      null,
+      2
+    ),
+    "utf-8"
+  );
+  try {
+    fs.renameSync(temporaryFile, DB_FILE);
+  } catch (error) {
+    if (fs.existsSync(temporaryFile)) fs.unlinkSync(temporaryFile);
+    throw error;
+  }
+}
+
+export function getMockUsers() {
+  ensureMockDbInitialized();
+  return globalForMock.__MOCK_USERS__!;
+}
+
+export function addMockUser(user: any) {
+  ensureMockDbInitialized();
+  globalForMock.__MOCK_USERS__ = [
+    { ...user },
+    ...(globalForMock.__MOCK_USERS__ || []).filter(
+      (savedUser: any) => savedUser.id !== user.id && savedUser.email !== user.email
+    ),
+  ];
+  persistMockDb();
+  return user;
+}
+
+export function updateMockUser(id: string, updates: any) {
+  ensureMockDbInitialized();
+  const user = globalForMock.__MOCK_USERS__?.find((savedUser: any) => savedUser.id === id);
+  if (!user) return null;
+  Object.assign(user, updates, { updatedAt: new Date().toISOString() });
+  persistMockDb();
+  return user;
+}
+
+export function deleteMockUser(id: string) {
+  ensureMockDbInitialized();
+  globalForMock.__MOCK_USERS__ = (globalForMock.__MOCK_USERS__ || []).filter(
+    (user: any) => user.id !== id
+  );
+  persistMockDb();
+}
+
+export function upsertMockEnrollment(enrollment: any) {
+  ensureMockDbInitialized();
+  const existing = globalForMock.__MOCK_ENROLLMENTS__!.find(
+    (item: any) =>
+      item.userId === enrollment.userId && item.courseId === enrollment.courseId
+  );
+  const saved = {
+    id: existing?.id || `mock_enrollment_${Date.now()}`,
+    enrolledAt: new Date().toISOString(),
+    ...existing,
+    ...enrollment,
+    updatedAt: new Date().toISOString(),
+  };
+  globalForMock.__MOCK_ENROLLMENTS__ = [
+    saved,
+    ...globalForMock.__MOCK_ENROLLMENTS__!.filter(
+      (item: any) =>
+        item.userId !== enrollment.userId || item.courseId !== enrollment.courseId
+    ),
+  ];
+  persistMockDb();
+  return saved;
+}
+
+export function getMockEnrollments(userId?: string) {
+  ensureMockDbInitialized();
+  return (globalForMock.__MOCK_ENROLLMENTS__ || []).filter(
+    (item: any) => !userId || item.userId === userId
+  );
+}
+
+export function deleteMockEnrollment(userId: string, courseId: string) {
+  ensureMockDbInitialized();
+  globalForMock.__MOCK_ENROLLMENTS__ = (
+    globalForMock.__MOCK_ENROLLMENTS__ || []
+  ).filter(
+    (item: any) => item.userId !== userId || item.courseId !== courseId
+  );
+  persistMockDb();
+}
+
+export function upsertMockPathEnrollment(pathEnrollment: any) {
+  ensureMockDbInitialized();
+  const existing = globalForMock.__MOCK_PATH_ENROLLMENTS__!.find(
+    (item: any) =>
+      item.userId === pathEnrollment.userId &&
+      item.pathId === pathEnrollment.pathId
+  );
+  const saved = {
+    id: existing?.id || `mock_path_enrollment_${Date.now()}`,
+    startedAt: new Date().toISOString(),
+    ...existing,
+    ...pathEnrollment,
+  };
+  globalForMock.__MOCK_PATH_ENROLLMENTS__ = [
+    saved,
+    ...globalForMock.__MOCK_PATH_ENROLLMENTS__!.filter(
+      (item: any) =>
+        item.userId !== pathEnrollment.userId ||
+        item.pathId !== pathEnrollment.pathId
+    ),
+  ];
+  persistMockDb();
+  return saved;
+}
+
+export function getMockPathEnrollments(userId?: string) {
+  ensureMockDbInitialized();
+  return (globalForMock.__MOCK_PATH_ENROLLMENTS__ || []).filter(
+    (item: any) => !userId || item.userId === userId
+  );
+}
+
+export function upsertMockLessonProgress(progress: any) {
+  ensureMockDbInitialized();
+  const existing = globalForMock.__MOCK_LESSON_PROGRESS__!.find(
+    (item: any) =>
+      item.userId === progress.userId && item.lessonId === progress.lessonId
+  );
+  const saved = {
+    id: existing?.id || `mock_lesson_progress_${Date.now()}`,
+    ...existing,
+    ...progress,
+    updatedAt: new Date().toISOString(),
+  };
+  globalForMock.__MOCK_LESSON_PROGRESS__ = [
+    saved,
+    ...globalForMock.__MOCK_LESSON_PROGRESS__!.filter(
+      (item: any) =>
+        item.userId !== progress.userId || item.lessonId !== progress.lessonId
+    ),
+  ];
+  persistMockDb();
+  return saved;
+}
+
+export function getMockLessonProgress(userId?: string) {
+  ensureMockDbInitialized();
+  return (globalForMock.__MOCK_LESSON_PROGRESS__ || []).filter(
+    (item: any) => !userId || item.userId === userId
+  );
+}
+
+export function upsertMockExternalProgress(progress: any) {
+  ensureMockDbInitialized();
+  const existing = globalForMock.__MOCK_EXTERNAL_PROGRESS__!.find(
+    (item: any) =>
+      item.userId === progress.userId && item.courseId === progress.courseId
+  );
+  const saved = {
+    id: existing?.id || `mock_external_progress_${Date.now()}`,
+    markedAt: new Date().toISOString(),
+    ...existing,
+    ...progress,
+  };
+  globalForMock.__MOCK_EXTERNAL_PROGRESS__ = [
+    saved,
+    ...globalForMock.__MOCK_EXTERNAL_PROGRESS__!.filter(
+      (item: any) =>
+        item.userId !== progress.userId || item.courseId !== progress.courseId
+    ),
+  ];
+  persistMockDb();
+  return saved;
+}
+
+export function getMockExternalProgress(userId?: string) {
+  ensureMockDbInitialized();
+  return (globalForMock.__MOCK_EXTERNAL_PROGRESS__ || []).filter(
+    (item: any) => !userId || item.userId === userId
+  );
+}
+
+export function addMockPasswordResetToken(resetToken: any) {
+  ensureMockDbInitialized();
+  globalForMock.__MOCK_PASSWORD_RESET_TOKENS__ = [
+    resetToken,
+    ...(globalForMock.__MOCK_PASSWORD_RESET_TOKENS__ || []).filter(
+      (item: any) => item.token !== resetToken.token
+    ),
+  ];
+  persistMockDb();
+  return resetToken;
+}
+
+export function getMockPasswordResetToken(token: string) {
+  ensureMockDbInitialized();
+  return globalForMock.__MOCK_PASSWORD_RESET_TOKENS__?.find(
+    (item: any) => item.token === token
+  ) || null;
+}
+
+export function deleteMockPasswordResetToken(token: string) {
+  ensureMockDbInitialized();
+  globalForMock.__MOCK_PASSWORD_RESET_TOKENS__ = (
+    globalForMock.__MOCK_PASSWORD_RESET_TOKENS__ || []
+  ).filter((item: any) => item.token !== token);
+  persistMockDb();
+}
+
+export function getMockCategories() {
+  ensureMockDbInitialized();
+  return globalForMock.__MOCK_CATEGORIES__!;
+}
+
+export function addMockCategory(category: any) {
+  ensureMockDbInitialized();
+  globalForMock.__MOCK_CATEGORIES__ = [
+    category,
+    ...(globalForMock.__MOCK_CATEGORIES__ || []).filter(
+      (savedCategory: any) => savedCategory.id !== category.id
+    ),
+  ];
+  persistMockDb();
+  return category;
+}
+
+export function deleteMockCategory(id: string) {
+  ensureMockDbInitialized();
+  globalForMock.__MOCK_CATEGORIES__ = (
+    globalForMock.__MOCK_CATEGORIES__ || []
+  ).filter((category: any) => category.id !== id);
+  persistMockDb();
 }
 
 export function getMockCourses() {
@@ -652,7 +933,7 @@ export function deleteMockLearningPathItem(pathId: string, itemId: string) {
   }
 }
 
-export function getMockSiteSettings() {
+function getDefaultMockSiteSettings() {
   return {
     id: "default",
     siteName: BRAND_NAME,
@@ -667,7 +948,24 @@ export function getMockSiteSettings() {
   };
 }
 
-export function getMockHomepageSections() {
+export function getMockSiteSettings() {
+  ensureMockDbInitialized();
+  return globalForMock.__MOCK_SITE_SETTINGS__!;
+}
+
+export function updateMockSiteSettings(updates: any) {
+  ensureMockDbInitialized();
+  globalForMock.__MOCK_SITE_SETTINGS__ = {
+    ...globalForMock.__MOCK_SITE_SETTINGS__,
+    ...updates,
+    id: "default",
+    updatedAt: new Date().toISOString(),
+  };
+  persistMockDb();
+  return globalForMock.__MOCK_SITE_SETTINGS__;
+}
+
+function getDefaultMockHomepageSections() {
   return [
     {
       id: "sec_hero",
@@ -715,6 +1013,22 @@ export function getMockHomepageSections() {
       isVisible: true,
     },
   ];
+}
+
+export function getMockHomepageSections() {
+  ensureMockDbInitialized();
+  return globalForMock.__MOCK_HOMEPAGE_SECTIONS__!;
+}
+
+export function updateMockHomepageSection(id: string, updates: any) {
+  ensureMockDbInitialized();
+  const section = globalForMock.__MOCK_HOMEPAGE_SECTIONS__?.find(
+    (savedSection: any) => savedSection.id === id
+  );
+  if (!section) return null;
+  Object.assign(section, updates);
+  persistMockDb();
+  return section;
 }
 
 export const MOCK_USERS = getMockUsers();

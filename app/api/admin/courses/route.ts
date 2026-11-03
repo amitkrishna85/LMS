@@ -224,7 +224,10 @@ export async function POST(req: Request) {
       null
     );
 
-    if (existingSlug) {
+    const localSlugExists =
+      !process.env.DATABASE_URL &&
+      getMockCourses().some((course: any) => course.slug === finalSlug);
+    if (existingSlug || localSlugExists) {
       finalSlug = `${baseSlug}-${Date.now().toString().slice(-4)}`;
     }
 

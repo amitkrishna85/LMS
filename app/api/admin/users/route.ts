@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession, unauthorizedResponse } from "@/lib/admin-auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
-import { getMockUsers } from "@/lib/mock-data";
+import { addMockUser, getMockUsers } from "@/lib/mock-data";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
@@ -76,13 +76,28 @@ export async function GET(req: Request) {
         const cnt = await prisma.user.count({ where: whereClause });
         return [u, cnt];
       },
-      [
-        getMockUsers().map((u) => ({
-          ...u,
-          _count: { enrollments: 2, pathEnrollments: 1 },
-        })),
-        getMockUsers().length,
-      ]
+      (() => {
+        const filteredUsers = getMockUsers().filter((user) => {
+          if (
+            search &&
+            !user.name.toLowerCase().includes(search.toLowerCase()) &&
+            !user.email.toLowerCase().includes(search.toLowerCase())
+          ) {
+            return false;
+          }
+          if (role && user.role !== role) return false;
+          if (status === "ACTIVE" && !user.isActive) return false;
+          if (status === "DEACTIVATED" && user.isActive) return false;
+          return true;
+        });
+        const paginatedUsers = filteredUsers
+          .slice(skip, skip + limit)
+          .map(({ passwordHash, ...user }) => ({
+            ...user,
+            _count: { enrollments: 0, pathEnrollments: 0 },
+          }));
+        return [paginatedUsers, filteredUsers.length];
+      })()
     );
 
     return NextResponse.json({
@@ -119,10 +134,12 @@ export async function POST(req: Request) {
     const normalizedEmail = email.toLowerCase().trim();
 
     // Check duplicate email
-    const existing = await safeDbQuery(
+    const existing =
+      (await safeDbQuery(
       () => prisma.user.findUnique({ where: { email: normalizedEmail } }),
       null
-    );
+      )) ||
+      getMockUsers().find((user) => user.email.toLowerCase() === normalizedEmail);
 
     if (existing) {
       return NextResponse.json(
@@ -165,6 +182,7 @@ export async function POST(req: Request) {
         createdAt: new Date(),
       }
     );
+    addMockUser({ ...user, passwordHash });
 
     // Audit Log
     await safeDbQuery(

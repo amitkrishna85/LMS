@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma, safeDbQuery } from "@/lib/prisma";
+import {
+  addMockPasswordResetToken,
+  getMockUsers,
+} from "@/lib/mock-data";
 import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
@@ -15,8 +19,8 @@ export async function POST(req: Request) {
     const normalizedEmail = email.toLowerCase().trim();
     const user = await safeDbQuery(
       () => prisma.user.findUnique({ where: { email: normalizedEmail } }),
-      null
-    );
+      getMockUsers().find((mockUser) => mockUser.email.toLowerCase() === normalizedEmail) || null
+    ) || getMockUsers().find((mockUser) => mockUser.email.toLowerCase() === normalizedEmail) || null;
 
     if (!user) {
       // Return success to avoid email enumeration
@@ -41,6 +45,12 @@ export async function POST(req: Request) {
         }),
       null
     );
+    addMockPasswordResetToken({
+      id: `mock_reset_${Date.now()}`,
+      userId: user.id,
+      token,
+      expiresAt: expiresAt.toISOString(),
+    });
 
     const resetUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/auth/reset-password?token=${token}`;
 

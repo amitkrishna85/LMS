@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { getAdminSession, unauthorizedResponse } from "@/lib/admin-auth";
 import { prisma, safeDbQuery } from "@/lib/prisma";
-import { getMockLearningPaths, addMockLearningPath } from "@/lib/mock-data";
+import {
+  getMockLearningPaths,
+  addMockLearningPath,
+} from "@/lib/mock-data";
 import { slugify } from "@/lib/utils";
 import { z } from "zod";
 
@@ -101,7 +104,10 @@ export async function POST(req: Request) {
       null
     );
 
-    if (existingSlug) {
+    const localSlugExists =
+      !process.env.DATABASE_URL &&
+      getMockLearningPaths().some((path: any) => path.slug === finalSlug);
+    if (existingSlug || localSlugExists) {
       finalSlug = `${baseSlug}-${Date.now().toString().slice(-4)}`;
     }
 

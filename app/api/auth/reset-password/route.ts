@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma, safeDbQuery } from "@/lib/prisma";
+import {
+  deleteMockPasswordResetToken,
+  getMockPasswordResetToken,
+  getMockUsers,
+  updateMockUser,
+} from "@/lib/mock-data";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
@@ -34,8 +40,18 @@ export async function POST(req: Request) {
           where: { token },
           include: { user: true },
         }),
-      null
-    );
+      (() => {
+        const tokenRecord = getMockPasswordResetToken(token);
+        const user = tokenRecord &&
+          getMockUsers().find((mockUser) => mockUser.id === tokenRecord.userId);
+        return tokenRecord && user ? { ...tokenRecord, user } : null;
+      })()
+    ) || (() => {
+      const tokenRecord = getMockPasswordResetToken(token);
+      const user = tokenRecord &&
+        getMockUsers().find((mockUser) => mockUser.id === tokenRecord.userId);
+      return tokenRecord && user ? { ...tokenRecord, user } : null;
+    })();
 
     if (!resetRecord) {
       return NextResponse.json(
@@ -49,6 +65,7 @@ export async function POST(req: Request) {
         () => prisma.passwordResetToken.delete({ where: { id: resetRecord.id } }),
         null
       );
+      deleteMockPasswordResetToken(token);
       return NextResponse.json(
         { error: "This reset link has expired. Please request a new one." },
         { status: 400 }
@@ -57,12 +74,20 @@ export async function POST(req: Request) {
 
     const newHash = await bcrypt.hash(newPassword, 10);
 
-    await prisma.user.update({
-      where: { id: resetRecord.userId },
-      data: {
-        passwordHash: newHash,
-        mustChangePassword: false,
-      },
+    await safeDbQuery(
+      () =>
+        prisma.user.update({
+          where: { id: resetRecord.userId },
+          data: {
+            passwordHash: newHash,
+            mustChangePassword: false,
+          },
+        }),
+      null
+    );
+    updateMockUser(resetRecord.userId, {
+      passwordHash: newHash,
+      mustChangePassword: false,
     });
 
     // Delete token after successful use
@@ -70,6 +95,7 @@ export async function POST(req: Request) {
       () => prisma.passwordResetToken.delete({ where: { id: resetRecord.id } }),
       null
     );
+    deleteMockPasswordResetToken(token);
 
     return NextResponse.json({
       success: true,
